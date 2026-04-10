@@ -1,0 +1,104 @@
+@model List<InsuranceClaims.Models.Entities.SurveyorAssignment>
+@{ ViewData["Title"] = "My Assigned Claims"; }
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="mb-0 fw-bold"><i class="bi bi-clipboard-data text-primary me-2"></i>My Assigned Claims</h2>
+  <span class="badge bg-info fs-6">@Model.Count Pending Assessment</span>
+</div>
+
+@* <div class="alert alert-info small mb-4">
+  <i class="bi bi-info-circle me-1"></i>
+  <strong>Your Steps:</strong>
+  1. Click <strong>Verify Docs</strong> to review &amp; verify/reject each document &nbsp;→&nbsp;
+  2. Click <strong>Submit Assessment</strong> to enter assessed amount &nbsp;→&nbsp;
+  3. Card disappears — Officer will then run Fraud Check 
+</div> *@
+
+@if (!Model.Any()) {
+<div class="card"><div class="card-body text-center py-5">
+  <i class="bi bi-clipboard2-check display-4 text-success"></i>
+  <h5 class="mt-3 text-success">All Done!</h5>
+  <p class="text-muted">No pending assessments. The officer will now run fraud checks.</p>
+</div></div>
+} else {
+<div class="row g-3">
+@foreach (var a in Model) {
+  var c = a.Claim;
+
+  @* Count ONLY non-rejected docs *@
+  int totalDocs    = c?.Documents.Count ?? 0;
+  int rejectedCount = c?.Documents.Count(d => d.VerificationStatus == InsuranceClaims.Enums.VerificationStatus.REJECTED) ?? 0;
+  int activeDocs   = totalDocs - rejectedCount;
+  int verifiedCount = c?.Documents.Count(d => d.VerificationStatus == InsuranceClaims.Enums.VerificationStatus.VERIFIED) ?? 0;
+  bool allVerified = activeDocs > 0 && verifiedCount == activeDocs;
+
+  <div class="col-md-6"><div class="card h-100 @(allVerified ? "border-success" : "")">
+    @if (allVerified) {
+      <div class="card-header bg-success text-white py-2 small">
+        <i class="bi bi-check-circle me-1"></i>Documents Verified — Ready for Assessment
+      </div>
+    }
+    <div class="card-body">
+      <div class="d-flex justify-content-between mb-2">
+        <h6 class="fw-bold mb-0">Claim #@c?.ClaimId</h6>
+        <span class="badge badge-@(c?.ClaimStatus.ToString() ?? "REGISTERED")">
+          @(c?.ClaimStatus.ToString().Replace("_"," "))
+        </span>
+      </div>
+      <p class="small text-muted mb-1"><strong>Customer:</strong> @c?.Customer?.Name</p>
+      <p class="small text-muted mb-1"><strong>Policy:</strong> @c?.Policy?.PolicyName</p>
+      <p class="small text-muted mb-1"><strong>Type:</strong> @c?.ClaimType</p>
+      <p class="text-primary fw-bold mb-2">Claimed: ₹@c?.ClaimAmount.ToString("N0")</p>
+
+      @* Show verified / active-docs count (excluding rejected) *@
+      <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+        <span class="text-muted small">Documents:</span>
+        <span class="badge @(allVerified ? "bg-success" : "bg-warning text-dark")">
+          @verifiedCount / @activeDocs Verified
+        </span>
+        @if (rejectedCount > 0) {
+          <span class="badge bg-danger">@rejectedCount Rejected</span>
+        }
+      </div>
+
+      @if (activeDocs == 0 && totalDocs == 0) {
+        <div class="alert alert-warning py-1 small mb-2">
+          <i class="bi bi-exclamation-triangle me-1"></i>No documents uploaded yet by customer.
+        </div>
+      }
+
+      @if (rejectedCount > 0 && activeDocs > verifiedCount) {
+        <div class="alert alert-warning py-1 small mb-2">
+          <i class="bi bi-clock me-1"></i>@rejectedCount doc(s) rejected — waiting for customer to re-upload.
+        </div>
+      }
+
+      @if (!string.IsNullOrEmpty(a.Notes)) {
+        <div class="alert alert-warning py-1 small mb-2">
+          <i class="bi bi-info-circle me-1"></i><strong>Officer note:</strong> @a.Notes
+        </div>
+      }
+
+      <div class="d-flex gap-2 flex-wrap mt-3">
+        <a href="/Claim/Details/@c?.ClaimId" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-eye me-1"></i>View Claim
+        </a>
+        <a href="/Document/PendingDocuments" class="btn btn-warning btn-sm text-dark">
+          <i class="bi bi-file-earmark-check me-1"></i>Verify Docs
+        </a>
+        @if (allVerified) {
+          <a href="/Assessment/Submit/@c?.ClaimId" class="btn btn-primary btn-sm">
+            <i class="bi bi-clipboard-plus me-1"></i>Submit Assessment
+          </a>
+        } else {
+          <button class="btn btn-secondary btn-sm" disabled
+                  title="@(rejectedCount > 0 ? "Waiting for customer to re-upload rejected docs" : "Verify all documents first")">
+            <i class="bi bi-clipboard-plus me-1"></i>Submit Assessment
+          </button>
+        }
+      </div>
+    </div>
+  </div></div>
+}
+</div>
+}

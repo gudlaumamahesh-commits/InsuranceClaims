@@ -1,0 +1,60 @@
+@model InsuranceClaims.Models.Entities.Policy
+@{ ViewData["Title"] = "Buy Policy"; }
+
+<div class="mb-3">
+    <a href="/" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Policies
+    </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header text-white py-3" style="background:linear-gradient(135deg,#4361ee,#3a0ca3);">
+        <h5 class="mb-0"><i class="bi bi-file-earmark-medical me-2"></i>@Model.PolicyName</h5>
+      </div>
+      <div class="card-body p-4">
+        <p class="text-muted">@(Model.Description ?? "Comprehensive insurance coverage.")</p>
+
+        <div class="alert alert-success py-3 d-flex align-items-center gap-3 mb-4">
+          <i class="bi bi-currency-rupee fs-3 text-success"></i>
+          <div>
+            <div class="small text-muted">Coverage Amount</div>
+            <div class="fs-3 fw-bold text-success">@Model.CoverageAmount.ToString("N0")</div>
+          </div>
+        </div>
+
+        <div class="row text-center mb-4">
+          <div class="col-6">
+            <div class="border rounded p-3">
+              <i class="bi bi-calendar-check text-primary fs-4"></i>
+              <p class="mb-0 mt-1 small text-muted">Start Date</p>
+              <strong>@DateTime.Now.ToString("dd MMM yyyy")</strong>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="border rounded p-3">
+              <i class="bi bi-calendar-x text-danger fs-4"></i>
+              <p class="mb-0 mt-1 small text-muted">End Date</p>
+              <strong>@DateTime.Now.AddYears(1).ToString("dd MMM yyyy")</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-warning small mb-4 py-2">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          By clicking Confirm, you agree to purchase this policy for 1 year.
+        </div>
+
+        @* FIXED: added AntiForgeryToken so POST is accepted *@
+        <form method="post" action="/Policy/ConfirmBuy">
+          @Html.AntiForgeryToken()
+          <input type="hidden" name="policyId" value="@Model.PolicyId"/>
+          <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+            <i class="bi bi-cart-check me-2"></i>Confirm Purchase (1 Year)
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

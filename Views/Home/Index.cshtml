@@ -1,0 +1,43 @@
+@model List<InsuranceClaims.Models.Entities.Policy>
+@{ ViewData["Title"] = "Home"; }
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1 fw-bold"><i class="bi bi-shield-check text-primary me-2"></i>Insurance Plans</h2>
+        <p class="text-muted mb-0">Choose the right coverage for your needs</p>
+    </div>
+    <span class="badge bg-primary fs-6">@Model.Count Plans Available</span>
+</div>
+
+<div class="row g-4">
+@foreach (var p in Model)
+{
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header text-white py-3" style="background:linear-gradient(135deg,#4361ee,#3a0ca3);">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-medical me-2"></i>@p.PolicyName</h5>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <p class="text-muted small">@(p.Description ?? "Comprehensive insurance coverage.")</p>
+                <div class="mt-auto">
+                    <div class="d-flex align-items-center mb-3 p-3 rounded" style="background:#f0f4ff;">
+                        <i class="bi bi-currency-rupee text-success fs-5 me-1"></i>
+                        <span class="fs-4 fw-bold text-success">@p.CoverageAmount.ToString("N0")</span>
+                        <span class="text-muted ms-2 small">Coverage</span>
+                    </div>
+                    @if (Context.Session.GetString("UserRole") == "Customer")
+                    {
+                        <a href="/Policy/Buy/@p.PolicyId" class="btn btn-primary w-100 fw-semibold">
+                            <i class="bi bi-cart-plus me-1"></i>Buy Policy
+                        </a>
+                    }
+                    else if (string.IsNullOrEmpty(Context.Session.GetString("UserRole")))
+                    {
+                        <a href="/Account/Login" class="btn btn-outline-primary w-100">Login to Buy</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+</div>

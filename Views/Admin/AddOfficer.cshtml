@@ -1,0 +1,55 @@
+@model InsuranceClaims.Models.ViewModels.AddOfficerViewModel
+@{ ViewData["Title"] = "Add Officer"; }
+<div class="mb-3"><a href="/Admin/Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+<div class="row justify-content-center"><div class="col-md-6">
+<div class="card">
+  <div class="card-header bg-primary text-white py-3"><h5 class="mb-0"><i class="bi bi-person-plus me-2"></i>Add New Officer</h5></div>
+  <div class="card-body p-4">
+    @* <div class="alert alert-info small mb-3">
+      <i class="bi bi-info-circle me-1"></i>
+      Officer email <strong>must end with @@insurance.com</strong> and must be in <strong>lowercase</strong>.
+      Example: <code>john.doe@insurance.com</code>
+    </div> *@
+    <form asp-action="AddOfficer" method="post">
+      @Html.AntiForgeryToken()
+      <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+      <div class="mb-3">
+        <label asp-for="Name" class="form-label fw-semibold small">Full Name</label>
+        <input asp-for="Name" class="form-control" placeholder="Officer Name"/>
+        <span asp-validation-for="Name" class="text-danger small"></span>
+      </div>
+      <div class="mb-3">
+        <label asp-for="Email" class="form-label fw-semibold small">Email </label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+          <input asp-for="Email" class="form-control" placeholder="john@insurance.com"
+                 oninput="this.value=this.value.toLowerCase()"/>
+        </div>
+        @* <div class="form-text text-muted">Only @@insurance.com email addresses allowed. Will be stored in lowercase.</div> *@
+        <span asp-validation-for="Email" class="text-danger small"></span>
+      </div>
+      <div class="mb-3">
+        <label asp-for="Phone" class="form-label fw-semibold small">Phone</label>
+        <input asp-for="Phone" class="form-control" placeholder="9876543210"/>
+        <span asp-validation-for="Phone" class="text-danger small"></span>
+      </div>
+      <div class="mb-4">
+        <label asp-for="Password" class="form-label fw-semibold small">Password</label>
+        <div class="input-group">
+          <input asp-for="Password" id="offPwd" class="form-control" type="password" placeholder="Min 6 chars, 1 uppercase, 1 number"/>
+          <span class="input-group-text" style="cursor:pointer;" onclick="togglePwd('offPwd','offEye')">
+            <i class="bi bi-eye" id="offEye"></i>
+          </span>
+        </div>
+        <span asp-validation-for="Password" class="text-danger small"></span>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold"><i class="bi bi-person-check me-2"></i>Add Officer</button>
+    </form>
+  </div>
+</div>
+</div></div>
+<script>
+function togglePwd(id,eid){const i=document.getElementById(id),e=document.getElementById(eid);
+  i.type=i.type==='password'?'text':'password';
+  e.classList.toggle('bi-eye');e.classList.toggle('bi-eye-slash');}
+</script>

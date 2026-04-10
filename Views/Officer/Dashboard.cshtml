@@ -1,0 +1,69 @@
+@model List<InsuranceClaims.Models.Entities.Claim>
+@{
+    ViewData["Title"] = "Officer Dashboard";
+    var assignments = ViewBag.Assignments as List<InsuranceClaims.Models.Entities.SurveyorAssignment> ?? new();
+}
+<div class="mb-4">
+    <h2 class="fw-bold"><i class="bi bi-person-badge text-primary me-2"></i>Officer Dashboard</h2>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card text-center p-3" style="border-left:4px solid #4361ee;">
+    <h3 class="fw-bold mb-0">@Model.Count</h3><small class="text-muted">Total Claims</small>
+  </div></div>
+  <div class="col-md-3"><div class="card text-center p-3" style="border-left:4px solid #f59e0b;">
+    <h3 class="fw-bold mb-0">@Model.Count(c => c.ClaimStatus == InsuranceClaims.Enums.ClaimStatus.UNDER_REVIEW)</h3>
+    <small class="text-muted">Under Review</small>
+  </div></div>
+  <div class="col-md-3"><div class="card text-center p-3" style="border-left:4px solid #10b981;">
+    <h3 class="fw-bold mb-0">@assignments.Count</h3><small class="text-muted">Surveyors Assigned</small>
+  </div></div>
+  <div class="col-md-3"><div class="card text-center p-3" style="border-left:4px solid #ef4444;">
+    <h3 class="fw-bold mb-0">@Model.Count(c => c.ClaimStatus == InsuranceClaims.Enums.ClaimStatus.APPROVED)</h3>
+    <small class="text-muted">Approved Claims</small>
+  </div></div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between">
+    <h6 class="mb-0 fw-bold"><i class="bi bi-clipboard-data me-2"></i>All Claims & Assignment Status</h6>
+    <a href="/Claim/AllClaims" class="btn btn-sm btn-outline-primary">Full Claims View</a>
+  </div>
+  <div class="table-responsive">
+  <table class="table table-hover align-middle mb-0">
+    <thead class="table-dark">
+      <tr><th>Claim #</th><th>Customer</th><th>Type</th><th>Amount</th><th>Status</th><th>Assigned Surveyor</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+    @foreach (var c in Model) {
+      var assign = assignments.FirstOrDefault(a => a.ClaimId == c.ClaimId);
+      <tr>
+        <td><strong>#@c.ClaimId</strong></td>
+        <td>@c.Customer?.Name</td>
+        <td><small>@c.ClaimType</small></td>
+        <td class="fw-semibold text-primary">₹@c.ClaimAmount.ToString("N0")</td>
+        <td><span class="badge badge-@c.ClaimStatus.ToString()">@c.ClaimStatus.ToString().Replace("_"," ")</span></td>
+        <td>
+          @if (assign != null) {
+            <span class="badge bg-success"><i class="bi bi-person-check me-1"></i>@assign.Surveyor?.Name</span>
+            <div class="text-muted" style="font-size:.72rem;">Assigned @assign.AssignedAt.ToString("dd MMM")</div>
+          } else {
+            <span class="badge bg-secondary">Not Assigned</span>
+          }
+        </td>
+        <td>
+          <div class="d-flex gap-1">
+            <a href="/Claim/Details/@c.ClaimId" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i></a>
+            @if (c.ClaimStatus == InsuranceClaims.Enums.ClaimStatus.UNDER_REVIEW && assign == null) {
+              <a href="/Officer/AssignSurveyor/@c.ClaimId" class="btn btn-info btn-sm text-white" title="Assign Surveyor">
+                <i class="bi bi-person-plus me-1"></i>Assign
+              </a>
+            }
+          </div>
+        </td>
+      </tr>
+    }
+    </tbody>
+  </table>
+  </div>
+</div>

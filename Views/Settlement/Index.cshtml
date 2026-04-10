@@ -1,0 +1,177 @@
+@model List<InsuranceClaims.Models.Entities.Claim>
+@{ ViewData["Title"] = "Settlement Dashboard"; }
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="mb-0 fw-bold"><i class="bi bi-cash-coin text-success me-2"></i>Settlement Dashboard</h2>
+</div>
+
+@{
+    var pendingApproval  = Model.Where(c => c.ClaimStatus == InsuranceClaims.Enums.ClaimStatus.UNDER_REVIEW).ToList();
+    var pendingSettlement = Model.Where(c => c.ClaimStatus == InsuranceClaims.Enums.ClaimStatus.APPROVED).ToList();
+}
+
+@* ── STEP 1: Fraud-checked claims waiting for Admin Approve/Reject ── *@
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center"
+       style="background:linear-gradient(135deg,#4361ee,#3a0ca3);">
+    <h6 class="mb-0 text-white fw-bold">
+      <i class="bi bi-shield-check me-2"></i>Step 1 — Pending Admin Approval
+    </h6>
+    <span class="badge bg-warning text-dark">@pendingApproval.Count claims</span>
+  </div>
+  <div class="card-body p-0">
+    @if (!pendingApproval.Any())
+    {
+      <div class="text-center py-4 text-muted small">
+        <i class="bi bi-check-circle text-success fs-4 d-block mb-1"></i>
+        No claims pending approval right now.
+      </div>
+    }
+    else
+    {
+      <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Claim #</th><th>Customer</th><th>Policy</th><th>Claimed</th><th>Fraud Score</th><th>Risk</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        @foreach (var c in pendingApproval)
+        {
+          <tr>
+            <td><strong>#@c.ClaimId</strong></td>
+            <td>@c.Customer?.Name</td>
+            <td><small>@c.Policy?.PolicyName</small></td>
+            <td class="fw-semibold text-primary">₹@c.ClaimAmount.ToString("N0")</td>
+            <td>
+              @if (c.FraudCheck != null)
+              {
+                <span class="fw-bold @(c.FraudCheck.FraudScore > 60 ? "text-danger" : c.FraudCheck.FraudScore > 30 ? "text-warning" : "text-success")">
+                  @c.FraudCheck.FraudScore / 100
+                </span>
+              }
+            </td>
+            <td>
+              @if (c.FraudCheck != null)
+              {
+                <span class="badge badge-@c.FraudCheck.RiskFlag.ToString()">@c.FraudCheck.RiskFlag</span>
+              }
+            </td>
+            <td>
+              <div class="d-flex gap-2">
+                <a href="/Claim/Details/@c.ClaimId" class="btn btn-outline-secondary btn-sm" title="View Details">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <form method="post" action="/Settlement/Approve" class="d-inline">
+                  @Html.AntiForgeryToken()
+                  <input type="hidden" name="claimId" value="@c.ClaimId"/>
+                  <button type="submit" class="btn btn-success btn-sm" 
+                          onclick="return confirm('Approve Claim #@c.ClaimId for ₹@c.ClaimAmount.ToString("N0")?')">
+                    <i class="bi bi-check-lg me-1"></i>Approve
+                  </button>
+                </form>
+                <button class="btn btn-danger btn-sm"
+                        data-bs-toggle="modal" data-bs-target="#rejectModal-@c.ClaimId">
+                  <i class="bi bi-x-lg me-1"></i>Reject
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+        </tbody>
+      </table>
+      </div>
+    }
+  </div>
+</div>
+
+@* ── STEP 2: Approved claims ready for payment ── *@
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center"
+       style="background:linear-gradient(135deg,#10b981,#059669);">
+    <h6 class="mb-0 text-white fw-bold">
+      <i class="bi bi-cash-stack me-2"></i>Step 2 — Process Settlement Payment
+    </h6>
+    <span class="badge bg-light text-dark">@pendingSettlement.Count approved</span>
+  </div>
+  <div class="card-body p-0">
+    @if (!pendingSettlement.Any())
+    {
+      <div class="text-center py-4 text-muted small">
+        <i class="bi bi-hourglass-split fs-4 d-block mb-1"></i>
+        No approved claims ready for settlement. Approve claims above first.
+      </div>
+    }
+    else
+    {
+      <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Claim #</th><th>Customer</th><th>Policy</th><th>Claimed Amount</th><th>Fraud Risk</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+        @foreach (var c in pendingSettlement)
+        {
+          <tr>
+            <td><strong>#@c.ClaimId</strong></td>
+            <td>@c.Customer?.Name</td>
+            <td><small>@c.Policy?.PolicyName</small></td>
+            <td class="fw-semibold text-success fs-6">₹@c.ClaimAmount.ToString("N0")</td>
+            <td>
+              @if (c.FraudCheck != null)
+              {
+                <span class="badge badge-@c.FraudCheck.RiskFlag.ToString()">
+                  @c.FraudCheck.RiskFlag (@c.FraudCheck.FraudScore/100)
+                </span>
+              }
+              else { <span class="text-muted small">—</span> }
+            </td>
+            <td>
+              <a href="/Settlement/Process/@c.ClaimId" class="btn btn-success btn-sm fw-semibold">
+                <i class="bi bi-cash me-1"></i>Process Payment
+              </a>
+            </td>
+          </tr>
+        }
+        </tbody>
+      </table>
+      </div>
+    }
+  </div>
+</div>
+
+@* Reject Modals *@
+@foreach (var c in pendingApproval)
+{
+  <div class="modal fade" id="rejectModal-@c.ClaimId" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Reject Claim #@c.ClaimId</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="post" action="/Settlement/Reject">
+          @Html.AntiForgeryToken()
+          <div class="modal-body">
+            <input type="hidden" name="claimId" value="@c.ClaimId"/>
+            <div class="alert alert-light border small mb-3">
+              <strong>@c.Customer?.Name</strong> — ₹@c.ClaimAmount.ToString("N0")
+              @if (c.FraudCheck != null)
+              {
+                <span class="ms-2 badge badge-@c.FraudCheck.RiskFlag.ToString()">@c.FraudCheck.RiskFlag</span>
+              }
+            </div>
+            <label class="form-label fw-semibold">Reason for Rejection <span class="text-danger">*</span></label>
+            <textarea name="remarks" class="form-control" rows="3" required
+                      placeholder="Enter clear reason for rejecting this claim..."></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-x-circle me-1"></i>Confirm Reject
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}

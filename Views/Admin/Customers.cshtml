@@ -1,0 +1,73 @@
+@model List<InsuranceClaims.Models.Entities.Customer>
+@{ ViewData["Title"] = "All Customers"; }
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="mb-0 fw-bold"><i class="bi bi-people text-primary me-2"></i>All Customers & Policies</h2>
+  <span class="badge bg-primary fs-6">@Model.Count Customers</span>
+</div>
+
+@if (!Model.Any()) {
+<div class="card"><div class="card-body text-center py-5">
+  <i class="bi bi-people display-4 text-muted"></i>
+  <p class="text-muted mt-3">No customers registered yet.</p>
+</div></div>
+} else {
+<div class="row g-3">
+@foreach (var cust in Model) {
+  var activePolicies  = cust.PolicyPurchases.Where(p => p.EndDate >= DateTime.Now).ToList();
+  var expiredPolicies = cust.PolicyPurchases.Where(p => p.EndDate < DateTime.Now).ToList();
+  var totalClaims     = cust.Claims.Count;
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center py-2">
+        <div>
+          <i class="bi bi-person-circle me-2 text-primary fs-5"></i>
+          <strong>@cust.Name</strong>
+          <span class="text-muted small ms-2">@cust.User?.Email</span>
+          <span class="text-muted small ms-2">| 📞 @cust.Phone</span>
+        </div>
+        <div class="d-flex gap-2">
+          <span class="badge bg-success">@activePolicies.Count Active</span>
+          @if (expiredPolicies.Any()) {<span class="badge bg-secondary">@expiredPolicies.Count Expired</span>}
+          <span class="badge bg-info">@totalClaims Claims</span>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        @if (!cust.PolicyPurchases.Any()) {
+          <p class="text-muted text-center py-3 mb-0 small"><i class="bi bi-info-circle me-1"></i>No policies purchased yet.</p>
+        } else {
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-light">
+            <tr><th>Policy Name</th><th>Coverage</th><th>Start Date</th><th>End Date</th><th>Renewals</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+          @foreach (var p in cust.PolicyPurchases.OrderByDescending(p => p.StartDate)) {
+            bool active = p.EndDate >= DateTime.Now;
+            <tr>
+              <td class="fw-semibold">@p.Policy?.PolicyName</td>
+              <td class="text-success fw-semibold">₹@p.Policy?.CoverageAmount.ToString("N0")</td>
+              <td><small>@p.StartDate.ToString("dd MMM yyyy")</small></td>
+              <td><small class="@(active ? "text-success" : "text-danger fw-semibold")">@p.EndDate.ToString("dd MMM yyyy")</small></td>
+              <td>
+                @if (p.Renewals.Any()) {
+                  <span class="badge bg-info">@p.Renewals.Count renewal(s)</span>
+                } else {
+                  <span class="text-muted small">—</span>
+                }
+              </td>
+              <td>
+                <span class="badge @(active ? "bg-success" : "bg-secondary")">
+                  @(active ? "Active" : "Expired")
+                </span>
+              </td>
+            </tr>
+          }
+          </tbody>
+        </table>
+        }
+      </div>
+    </div>
+  </div>
+}
+</div>
+}

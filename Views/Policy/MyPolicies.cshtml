@@ -1,0 +1,145 @@
+@model List<InsuranceClaims.Models.Entities.PolicyPurchase>
+@{
+    ViewData["Title"] = "My Policies";
+    var settledPolicies = ViewBag.SettledPolicies as HashSet<int> ?? new HashSet<int>();
+    var claimsByPolicy  = ViewBag.ClaimsByPolicy  as Dictionary<int, InsuranceClaims.Enums.ClaimStatus>
+                          ?? new Dictionary<int, InsuranceClaims.Enums.ClaimStatus>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0 fw-bold"><i class="bi bi-file-earmark-text text-primary me-2"></i>My Policies</h2>
+    <a href="/" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Buy New Policy</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card"><div class="card-body text-center py-5">
+        <i class="bi bi-inbox display-4 text-muted"></i>
+        <p class="text-muted mt-3">No policies purchased yet.</p>
+        <a href="/" class="btn btn-primary">Browse Policies</a>
+    </div></div>
+}
+else
+{
+    <div class="row g-3">
+    @foreach (var p in Model)
+    {
+        bool active    = p.EndDate >= DateTime.Now;
+        bool isSettled = settledPolicies.Contains(p.PolicyId);
+        bool hasClaim  = claimsByPolicy.ContainsKey(p.PolicyId);
+        var  claimSt   = hasClaim ? claimsByPolicy[p.PolicyId] : (InsuranceClaims.Enums.ClaimStatus?)null;
+        string newEnd  = p.EndDate.AddYears(1).ToString("dd MMM yyyy");
+
+        // Badge logic
+        string badgeClass = isSettled ? "bg-purple text-white" :
+                            active    ? "bg-success" : "bg-secondary";
+        string badgeText  = isSettled ? "Settled" :
+                            active    ? "Active"   : "Expired";
+
+        <div class="col-md-6">
+        <div class="card h-100" style="@(isSettled ? "border-left:4px solid #6f42c1;" : "")">
+            @if (isSettled)
+            {
+                <div class="card-header py-2 text-white small fw-semibold"
+                     style="background:linear-gradient(135deg,#6f42c1,#4361ee);">
+                    <i class="bi bi-check-circle-fill me-1"></i>
+                    This policy's claim has been settled — only renewal is available
+                </div>
+            }
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <h6 class="fw-bold mb-0">@p.Policy?.PolicyName</h6>
+                    <span class="badge @badgeClass px-2">@badgeText</span>
+                </div>
+
+                <p class="fw-bold mb-2 @(isSettled ? "text-purple" : "text-success")"
+                   style="@(isSettled ? "color:#6f42c1;" : "")">
+                    ₹@p.Policy?.CoverageAmount.ToString("N0")
+                </p>
+
+                <div class="row text-muted small mb-3">
+                    <div class="col-6">
+                        <i class="bi bi-calendar-check me-1"></i>Start: @p.StartDate.ToString("dd MMM yyyy")
+                    </div>
+                    <div class="col-6">
+                        <i class="bi bi-calendar-x me-1"></i>
+                        End: <span class="@(active ? "" : "text-danger fw-semibold")">@p.EndDate.ToString("dd MMM yyyy")</span>
+                    </div>
+                </div>
+
+                @if (p.Renewals.Any())
+                {
+                    <small class="text-info d-block mb-2">
+                        <i class="bi bi-arrow-repeat me-1"></i>Renewed @p.Renewals.Count time(s)
+                    </small>
+                }
+
+                @if (!active && !isSettled)
+                {
+                    <div class="alert alert-warning py-1 small mb-2">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Policy expired. Renew to continue coverage.
+                    </div>
+                }
+
+                <div class="d-flex gap-2 flex-wrap">
+                    @* Renew — always available *@
+                    <button type="button" class="btn btn-outline-primary btn-sm"
+                            data-bs-toggle="modal" data-bs-target="#renewModal-@p.PurchaseId">
+                        <i class="bi bi-arrow-repeat me-1"></i>Renew (+1 Year)
+                    </button>
+
+                    @* File Claim — only if policy active AND not already settled *@
+                    @if (active && !isSettled && !hasClaim)
+                    {
+                        <a href="/Claim/Create" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i>File Claim
+                        </a>
+                    }
+                    @if (isSettled)
+                    {
+                        <span class="badge py-2 px-3 small" style="background:#6f42c1;">
+                            <i class="bi bi-check-circle me-1"></i>Claim Settled
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+        </div>
+
+        @* Renewal Modal *@
+        <div class="modal fade" id="renewModal-@p.PurchaseId" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header" style="background:#4361ee;">
+                        <h5 class="modal-title text-white">
+                            <i class="bi bi-arrow-repeat me-2"></i>Confirm Policy Renewal
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Are you sure you want to renew this policy?</p>
+                        <table class="table table-sm table-bordered mb-0">
+                            <tr><td class="text-muted fw-semibold">Policy</td><td><strong>@p.Policy?.PolicyName</strong></td></tr>
+                            <tr><td class="text-muted fw-semibold">Coverage</td><td><strong class="text-success">₹@p.Policy?.CoverageAmount.ToString("N0")</strong></td></tr>
+                            <tr><td class="text-muted fw-semibold">Current End Date</td><td>@p.EndDate.ToString("dd MMM yyyy")</td></tr>
+                            <tr class="table-success"><td class="text-muted fw-semibold">New End Date</td><td><strong>@newEnd</strong></td></tr>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i>No, Cancel
+                        </button>
+                        <form method="post" action="/Policy/Renew" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="purchaseId" value="@p.PurchaseId"/>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>Yes, Renew Policy
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    </div>
+}

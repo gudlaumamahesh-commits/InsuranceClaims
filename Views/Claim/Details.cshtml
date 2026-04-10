@@ -1,0 +1,208 @@
+@model InsuranceClaims.Models.Entities.Claim
+@{ ViewData["Title"] = "Claim Details"; var role = Context.Session.GetString("UserRole"); }
+
+<div class="mb-3"><a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+
+<div class="row g-3">
+  <div class="col-md-8">
+
+    @* Claim Info *@
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-clipboard2-pulse me-2 text-primary"></i>Claim #@Model.ClaimId</h6>
+        <span class="badge badge-@Model.ClaimStatus.ToString() px-3 py-2">@Model.ClaimStatus.ToString().Replace("_"," ")</span>
+      </div>
+      <div class="card-body"><div class="row g-3">
+        <div class="col-sm-6"><label class="text-muted small">Policy</label><p class="fw-semibold mb-0">@Model.Policy?.PolicyName</p></div>
+        <div class="col-sm-6"><label class="text-muted small">Claim Type</label><p class="fw-semibold mb-0">@Model.ClaimType</p></div>
+        <div class="col-sm-6"><label class="text-muted small">Claimed Amount</label><p class="fw-bold text-primary fs-5 mb-0">₹@Model.ClaimAmount.ToString("N0")</p></div>
+        <div class="col-sm-6"><label class="text-muted small">Filed On</label><p class="fw-semibold mb-0">@Model.CreatedAt.ToString("dd MMM yyyy")</p></div>
+      </div></div>
+    </div>
+
+    @* Upload prompt for REGISTERED *@
+    @if (Model.ClaimStatus == InsuranceClaims.Enums.ClaimStatus.REGISTERED && role == "Customer")
+    {
+      <div class="alert alert-warning d-flex align-items-center gap-2 mb-3">
+        <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+        <div><strong>Action Required!</strong> Please upload supporting documents to move your claim forward.
+          <div class="mt-2"><a href="/Document/Upload/@Model.ClaimId" class="btn btn-warning btn-sm fw-semibold"><i class="bi bi-upload me-1"></i>Upload Documents Now</a></div>
+        </div>
+      </div>
+    }
+
+    @* Documents *@
+    @{
+      var rejectedDocs = Model.Documents.Where(d => d.VerificationStatus == InsuranceClaims.Enums.VerificationStatus.REJECTED).ToList();
+      var pendingDocs  = Model.Documents.Where(d => d.VerificationStatus == InsuranceClaims.Enums.VerificationStatus.PENDING).ToList();
+      var verifiedDocs = Model.Documents.Where(d => d.VerificationStatus == InsuranceClaims.Enums.VerificationStatus.VERIFIED).ToList();
+    }
+
+    @* Rejected doc notification for customer *@
+    @if (rejectedDocs.Any() && role == "Customer")
+    {
+      <div class="alert alert-danger mb-3">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>@rejectedDocs.Count document(s) rejected by surveyor.</strong>
+        Please re-upload the following:
+        <ul class="mb-2 mt-1">
+          @foreach (var rd in rejectedDocs) {
+            <li><strong>@rd.DocumentName</strong> — was rejected. Please upload a correct version.</li>
+          }
+        </ul>
+        <a href="/Document/Upload/@Model.ClaimId" class="btn btn-danger btn-sm">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Re-upload Documents
+        </a>
+      </div>
+    }
+
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-paperclip me-2 text-primary"></i>Documents
+          <span class="ms-2 small fw-normal text-muted">
+            (@verifiedDocs.Count verified, @pendingDocs.Count pending, @rejectedDocs.Count rejected)
+          </span>
+        </h6>
+        @if (role == "Customer") {
+          <a href="/Document/Upload/@Model.ClaimId" class="btn btn-sm btn-outline-primary"><i class="bi bi-upload me-1"></i>Upload More</a>
+        }
+      </div>
+      <div class="card-body p-0">
+        @if (!Model.Documents.Any()) {
+          <p class="text-muted text-center py-3 mb-0"><i class="bi bi-folder2-open me-1"></i>No documents uploaded yet.</p>
+        } else {
+          <div class="list-group list-group-flush">
+          @foreach (var d in Model.Documents) {
+            string rowClass = d.VerificationStatus == InsuranceClaims.Enums.VerificationStatus.REJECTED ? "list-group-item-danger" :
+                              d.VerificationStatus == InsuranceClaims.Enums.VerificationStatus.VERIFIED ? "list-group-item-success" : "";
+            <div class="list-group-item @rowClass d-flex justify-content-between align-items-center">
+              <div>
+                <i class="bi bi-file-earmark me-2 text-muted"></i>
+                <strong>@d.DocumentName</strong>
+                @if (d.VerificationStatus == InsuranceClaims.Enums.VerificationStatus.REJECTED && role == "Customer") {
+                  <span class="text-danger ms-2 small">← Please re-upload</span>
+                }
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <a href="@d.FilePath" target="_blank" class="btn btn-outline-secondary btn-sm py-0"><i class="bi bi-eye"></i></a>
+                <span class="badge badge-@d.VerificationStatus.ToString()">@d.VerificationStatus</span>
+              </div>
+            </div>
+          }
+          </div>
+        }
+      </div>
+    </div>
+
+    @* Assessment *@
+    @if (Model.Assessments.Any()) {
+    <div class="card mb-3">
+      <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-clipboard-data me-2 text-primary"></i>Assessment by Surveyor</h6></div>
+      <div class="card-body">
+        @foreach (var a in Model.Assessments) {
+          <div class="mb-2 pb-2 border-bottom">
+            <span class="text-muted small">Surveyor:</span> <strong>@a.Surveyor?.Name</strong><br/>
+            <span class="text-muted small">Assessed Amount:</span> <span class="text-success fw-bold">₹@a.AssessedAmount.ToString("N0")</span><br/>
+            @if (!string.IsNullOrEmpty(a.AssessmentRemarks)) { <span class="text-muted small">Remarks: @a.AssessmentRemarks</span> }
+          </div>
+        }
+      </div>
+    </div>
+    }
+
+    @* Fraud Check *@
+    @if (Model.FraudCheck != null) {
+    <div class="card mb-3">
+      <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-shield-exclamation me-2 text-warning"></i>Fraud Check Result</h6></div>
+      <div class="card-body"><div class="row text-center">
+        <div class="col-6"><p class="text-muted small mb-1">Fraud Score</p>
+          <p class="fs-2 fw-bold mb-0 @(Model.FraudCheck.FraudScore > 60 ? "text-danger" : Model.FraudCheck.FraudScore > 30 ? "text-warning" : "text-success")">
+            @Model.FraudCheck.FraudScore<span class="fs-6 text-muted">/100</span></p>
+        </div>
+        <div class="col-6"><p class="text-muted small mb-1">Risk Flag</p>
+          <span class="badge badge-@Model.FraudCheck.RiskFlag.ToString() px-3 py-2 fs-6">@Model.FraudCheck.RiskFlag</span>
+        </div>
+      </div></div>
+    </div>
+    }
+
+    @* Settlement Result - show APPROVED or REJECTED clearly for customer *@
+    @if (Model.ClaimStatus == InsuranceClaims.Enums.ClaimStatus.APPROVED || Model.ClaimStatus == InsuranceClaims.Enums.ClaimStatus.REJECTED)
+    {
+      @if (Model.ClaimStatus == InsuranceClaims.Enums.ClaimStatus.REJECTED) {
+        <div class="card mb-3 border-danger">
+          <div class="card-header bg-danger text-white">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-x-circle me-2"></i>Claim Rejected by Admin</h6>
+          </div>
+          <div class="card-body">
+            <p class="mb-1">Your claim has been <strong>rejected</strong>. Please check the timeline for the reason.</p>
+            @{var rejTrack = Model.TrackingHistory.FirstOrDefault(t => t.Status == "REJECTED");}
+            @if (rejTrack != null) {<p class="text-danger mb-0"><strong>Reason:</strong> @rejTrack.Remarks</p>}
+          </div>
+        </div>
+      }
+    }
+
+    @if (Model.SettlementLog != null) {
+      bool settled = Model.SettlementLog.SettlementStatus == InsuranceClaims.Enums.SettlementStatus.PROCESSED;
+      <div class="card mb-3">
+        <div class="card-header @(settled ? "bg-success" : "bg-warning") text-white">
+          <h6 class="mb-0 fw-bold">
+            @if (settled) { <i class="bi bi-check-circle-fill me-2"></i><text>Settlement Approved & Processed</text> }
+            else          { <i class="bi bi-clock-history me-2"></i><text>Settlement — @Model.SettlementLog.SettlementStatus</text> }
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="text-muted small">Settlement Amount</label>
+              <p class="fs-4 fw-bold text-success mb-0">₹@Model.SettlementLog.SettlementAmount.ToString("N0")</p>
+            </div>
+            <div class="col-sm-6">
+              <label class="text-muted small">Status</label>
+              <p class="fw-bold mb-0 @(settled ? "text-success" : "text-warning")">@Model.SettlementLog.SettlementStatus</p>
+            </div>
+            <div class="col-sm-6">
+              <label class="text-muted small">Processed On</label>
+              <p class="fw-semibold mb-0">@Model.SettlementLog.ProcessedAt.ToString("dd MMM yyyy, hh:mm tt")</p>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.SettlementLog.Remarks)) {
+              <div class="col-12"><label class="text-muted small">Remarks</label><p class="mb-0">@Model.SettlementLog.Remarks</p></div>
+            }
+          </div>
+          @if (settled && role == "Customer") {
+            <div class="alert alert-success mt-3 mb-0 small">
+              <i class="bi bi-check-circle-fill me-1"></i>
+              Your claim settlement of <strong>₹@Model.SettlementLog.SettlementAmount.ToString("N0")</strong> has been processed.
+              The amount will be credited to your registered bank account.
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+  </div>
+
+  @* Timeline *@
+  <div class="col-md-4">
+    <div class="card"><div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2 text-primary"></i>Claim Timeline</h6></div>
+    <div class="card-body p-3">
+      @if (!Model.TrackingHistory.Any()) { <p class="text-muted text-center mb-0 small">No history yet.</p> }
+      else {
+        <div class="ps-3">
+        @foreach (var t in Model.TrackingHistory.OrderByDescending(x => x.UpdatedAt)) {
+          string dotColor = t.Status == "REJECTED" ? "#ef4444" :
+                            t.Status == "APPROVED" || t.Status == "SETTLEMENT_PROCESSED" ? "#10b981" :
+                            t.Status == "DOCS_VERIFIED" || t.Status == "ASSESSMENT_SUBMITTED" ? "#10b981" : "#4361ee";
+          <div class="mb-3 border-start border-primary ps-3 position-relative">
+            <div class="timeline-dot" style="background:@dotColor;"></div>
+            <p class="mb-0 fw-semibold small">@t.Status.Replace("_"," ")</p>
+            @if (!string.IsNullOrEmpty(t.Remarks)) {<p class="mb-0 text-muted small">@t.Remarks</p>}
+            <p class="mb-0 text-muted" style="font-size:.72rem;">@t.UpdatedAt.ToString("dd MMM yyyy, hh:mm tt")</p>
+          </div>
+        }
+        </div>
+      }
+    </div></div>
+  </div>
+</div>

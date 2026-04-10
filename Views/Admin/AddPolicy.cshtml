@@ -1,0 +1,67 @@
+@model InsuranceClaims.Models.ViewModels.AddPolicyViewModel
+@{ ViewData["Title"] = "Add Policy"; }
+
+<div class="mb-3">
+    <a href="/Admin/Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+    </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header py-3" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+        <h5 class="mb-0 text-white"><i class="bi bi-file-earmark-plus me-2"></i>Add New Insurance Policy</h5>
+      </div>
+      <div class="card-body p-4">
+
+        <div class="alert alert-info small mb-4">
+          <i class="bi bi-info-circle me-1"></i>
+          This policy will immediately appear on the <strong>Home page</strong> for customers to purchase.
+        </div>
+
+        <form asp-action="AddPolicy" method="post">
+          @Html.AntiForgeryToken()
+          <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+          <div class="mb-3">
+            <label asp-for="PolicyName" class="form-label fw-semibold">
+              Policy Name <span class="text-danger">*</span>
+            </label>
+            <input asp-for="PolicyName" class="form-control"
+                   placeholder="e.g. Premium Health Cover, Two-Wheeler Insurance"/>
+            <span asp-validation-for="PolicyName" class="text-danger small"></span>
+          </div>
+
+          <div class="mb-3">
+            <label asp-for="CoverageAmount" class="form-label fw-semibold">
+              Coverage Amount (₹) <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text fw-bold">₹</span>
+              <input asp-for="CoverageAmount" class="form-control form-control-lg"
+                     placeholder="e.g. 500000"/>
+            </div>
+            <div class="form-text">Minimum ₹1,000 — Maximum ₹10,00,00,000</div>
+            <span asp-validation-for="CoverageAmount" class="text-danger small"></span>
+          </div>
+
+          <div class="mb-4">
+            <label asp-for="Description" class="form-label fw-semibold">Description</label>
+            <textarea asp-for="Description" class="form-control" rows="3"
+                      placeholder="Brief description shown to customers on the home page..."></textarea>
+            <span asp-validation-for="Description" class="text-danger small"></span>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-warning py-2 fw-semibold text-dark">
+              <i class="bi bi-check-circle me-2"></i>Add Policy
+            </button>
+            <a href="/Admin/Index" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>

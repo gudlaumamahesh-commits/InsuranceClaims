@@ -1,0 +1,220 @@
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    var officers    = ViewBag.Officers    as List<InsuranceClaims.Models.Entities.Officer>             ?? new();
+    var surveyors   = ViewBag.Surveyors   as List<InsuranceClaims.Models.Entities.Surveyor>            ?? new();
+    var policies    = ViewBag.Policies    as List<InsuranceClaims.Models.Entities.Policy>              ?? new();
+    var assignments = ViewBag.Assignments as List<InsuranceClaims.Models.Entities.SurveyorAssignment>  ?? new();
+
+    var activeOfficers   = officers.Count(o => o.IsActive);
+    var inactiveOfficers = officers.Count(o => !o.IsActive);
+    var activeSurveyors  = surveyors.Count(s => s.IsActive);
+    var inactiveSurveyors= surveyors.Count(s => !s.IsActive);
+}
+
+<div class="mb-4"><h2 class="fw-bold"><i class="bi bi-people text-primary me-2"></i>Admin Dashboard</h2></div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card text-center p-3" style="border-left:4px solid #4361ee;">
+    <i class="bi bi-person-badge text-primary fs-2 mb-1"></i>
+    <h3 class="mb-0 fw-bold">@activeOfficers <small class="text-muted fs-6">/ @officers.Count</small></h3>
+    <small class="text-muted">Active Officers</small>
+  </div></div>
+  <div class="col-md-3"><div class="card text-center p-3" style="border-left:4px solid #10b981;">
+    <i class="bi bi-clipboard-data text-success fs-2 mb-1"></i>
+    <h3 class="mb-0 fw-bold">@activeSurveyors <small class="text-muted fs-6">/ @surveyors.Count</small></h3>
+    <small class="text-muted">Active Surveyors</small>
+  </div></div>
+  <div class="col-md-3"><div class="card text-center p-3" style="border-left:4px solid #f59e0b;">
+    <i class="bi bi-file-earmark-medical text-warning fs-2 mb-1"></i>
+    <h3 class="mb-0 fw-bold">@policies.Count</h3>
+    <small class="text-muted">Policies</small>
+  </div></div>
+  <div class="col-md-3"><div class="card text-center p-3" style="border-left:4px solid #8b5cf6;">
+    <i class="bi bi-person-check fs-2 mb-1" style="color:#8b5cf6;"></i>
+    <h3 class="mb-0 fw-bold">@assignments.Count</h3>
+    <small class="text-muted">Assignments</small>
+  </div></div>
+</div>
+
+<div class="row g-4">
+
+  <!-- ── OFFICERS ────────────────────────────────────── -->
+  <div class="col-12"><div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h6 class="mb-0 fw-bold"><i class="bi bi-person-badge me-2 text-primary"></i>
+        Officers
+        <span class="badge bg-success ms-1">@activeOfficers Active</span>
+        @if (inactiveOfficers > 0) {<span class="badge bg-danger ms-1">@inactiveOfficers Inactive</span>}
+      </h6>
+      <a href="/Admin/AddOfficer" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Add Officer</a>
+    </div>
+    <div class="card-body p-0">
+      @if (!officers.Any()) { <p class="text-muted text-center py-4 mb-0">No officers yet.</p> }
+      else {
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>History</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+        @foreach (var o in officers) {
+          <tr class="@(!o.IsActive ? "table-light text-muted" : "")">
+            <td class="fw-semibold @(!o.IsActive ? "text-decoration-line-through text-muted" : "")">@o.Name</td>
+            <td><small>@o.User?.Email</small></td>
+            <td><small>@o.Phone</small></td>
+            <td>
+              @if (o.IsActive) {
+                <span class="badge bg-success"><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>Active</span>
+              } else {
+                <span class="badge bg-danger"><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>Inactive</span>
+              }
+            </td>
+            <td>
+              <div style="font-size:.75rem;" class="text-muted">
+                @if (o.DeactivatedAt.HasValue) {
+                  <div><i class="bi bi-x-circle text-danger me-1"></i>Deactivated: @o.DeactivatedAt.Value.ToString("dd MMM yyyy HH:mm")</div>
+                }
+                @if (o.ReactivatedAt.HasValue) {
+                  <div><i class="bi bi-check-circle text-success me-1"></i>Reactivated: @o.ReactivatedAt.Value.ToString("dd MMM yyyy HH:mm")</div>
+                }
+                @if (!o.DeactivatedAt.HasValue && !o.ReactivatedAt.HasValue) {
+                  <span class="text-muted">—</span>
+                }
+              </div>
+            </td>
+            <td>
+              <form method="post" action="/Admin/ToggleOfficer">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="officerId" value="@o.OfficerId"/>
+                @if (o.IsActive) {
+                  <button type="submit" class="btn btn-warning btn-sm"
+                          onclick="return confirm('Deactivate @o.Name? They will not be able to login.')"
+                          title="Deactivate Officer">
+                    <i class="bi bi-person-dash me-1"></i>Deactivate
+                  </button>
+                } else {
+                  <button type="submit" class="btn btn-success btn-sm"
+                          onclick="return confirm('Reactivate @o.Name?')"
+                          title="Reactivate Officer">
+                    <i class="bi bi-person-check me-1"></i>Activate
+                  </button>
+                }
+              </form>
+            </td>
+          </tr>
+        }
+        </tbody>
+      </table>
+      }
+    </div>
+  </div></div>
+
+  <!-- ── POLICIES ───────────────────────────────────── -->
+  <div class="col-md-5"><div class="card h-100">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h6 class="mb-0 fw-bold"><i class="bi bi-file-earmark-medical me-2 text-warning"></i>Insurance Policies</h6>
+      <a href="/Admin/AddPolicy" class="btn btn-warning btn-sm text-dark"><i class="bi bi-plus me-1"></i>Add Policy</a>
+    </div>
+    <div class="card-body p-0">
+      @if (!policies.Any()) { <p class="text-muted text-center py-4 mb-0">No policies found.</p> }
+      else {
+      <table class="table table-hover mb-0">
+        <thead class="table-light"><tr><th>Policy Name</th><th>Coverage</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var p in policies) {<tr>
+          <td class="fw-semibold">@p.PolicyName</td>
+          <td class="text-success fw-bold">₹@p.CoverageAmount.ToString("N0")</td>
+          <td><form method="post" action="/Admin/DeletePolicy">@Html.AntiForgeryToken()
+            <input type="hidden" name="policyId" value="@p.PolicyId"/>
+            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete &quot;@p.PolicyName&quot;?')">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form></td>
+        </tr>}
+        </tbody>
+      </table>
+      }
+    </div>
+  </div></div>
+
+  <!-- ── SURVEYORS ──────────────────────────────────── -->
+  <div class="col-12"><div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h6 class="mb-0 fw-bold"><i class="bi bi-clipboard-data me-2 text-success"></i>
+        Surveyors &amp; Assignment Status
+        <span class="badge bg-success ms-1">@activeSurveyors Active</span>
+        @if (inactiveSurveyors > 0) {<span class="badge bg-danger ms-1">@inactiveSurveyors Inactive</span>}
+      </h6>
+      <a href="/Admin/AddSurveyor" class="btn btn-success btn-sm"><i class="bi bi-plus me-1"></i>Add Surveyor</a>
+    </div>
+    <div class="card-body p-0">
+      @if (!surveyors.Any()) { <p class="text-muted text-center py-4 mb-0">No surveyors yet.</p> }
+      else {
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Assigned To</th><th>History</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+        @foreach (var s in surveyors) {
+          var sa = assignments.Where(a => a.SurveyorId == s.SurveyorId).ToList();
+          <tr class="@(!s.IsActive ? "table-light text-muted" : "")">
+            <td class="fw-semibold @(!s.IsActive ? "text-decoration-line-through text-muted" : "")">@s.Name</td>
+            <td><small>@s.User?.Email</small></td>
+            <td><small>@s.Phone</small></td>
+            <td>
+              @if (s.IsActive) {
+                <span class="badge bg-success"><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>Active</span>
+              } else {
+                <span class="badge bg-danger"><i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>Inactive</span>
+              }
+            </td>
+            <td>
+              @if (sa.Any()) {
+                <span class="badge bg-info text-dark">@sa.Count claim(s)</span>
+                @foreach (var a in sa) {
+                  <div class="small text-muted">
+                    <a href="/Claim/Details/@a.ClaimId" class="text-decoration-none">#@a.ClaimId</a>
+                    — @(a.Claim?.Customer?.Name) — @a.AssignedAt.ToString("dd MMM")
+                  </div>
+                }
+              } else { <span class="text-muted small">—</span> }
+            </td>
+            <td>
+              <div style="font-size:.75rem;" class="text-muted">
+                @if (s.DeactivatedAt.HasValue) {
+                  <div><i class="bi bi-x-circle text-danger me-1"></i>@s.DeactivatedAt.Value.ToString("dd MMM yyyy HH:mm")</div>
+                }
+                @if (s.ReactivatedAt.HasValue) {
+                  <div><i class="bi bi-check-circle text-success me-1"></i>@s.ReactivatedAt.Value.ToString("dd MMM yyyy HH:mm")</div>
+                }
+                @if (!s.DeactivatedAt.HasValue && !s.ReactivatedAt.HasValue) { <span>—</span> }
+              </div>
+            </td>
+            <td>
+              <form method="post" action="/Admin/ToggleSurveyor">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="surveyorId" value="@s.SurveyorId"/>
+                @if (s.IsActive) {
+                  <button type="submit" class="btn btn-warning btn-sm"
+                          onclick="return confirm('Deactivate @s.Name? They will not be able to login or handle claims.')"
+                          title="Deactivate Surveyor">
+                    <i class="bi bi-person-dash me-1"></i>Deactivate
+                  </button>
+                } else {
+                  <button type="submit" class="btn btn-success btn-sm"
+                          onclick="return confirm('Reactivate @s.Name?')"
+                          title="Reactivate Surveyor">
+                    <i class="bi bi-person-check me-1"></i>Activate
+                  </button>
+                }
+              </form>
+            </td>
+          </tr>
+        }
+        </tbody>
+      </table>
+      }
+    </div>
+  </div></div>
+
+</div>

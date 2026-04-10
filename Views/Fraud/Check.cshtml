@@ -1,0 +1,97 @@
+@model InsuranceClaims.Models.ViewModels.FraudCheckViewModel
+@{
+    ViewData["Title"] = "Fraud Check";
+    var claim      = ViewBag.Claim      as InsuranceClaims.Models.Entities.Claim;
+    var assessment = ViewBag.Assessment as InsuranceClaims.Models.Entities.Assessment;
+}
+<div class="mb-3"><a href="/Fraud/Index" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+<div class="row justify-content-center"><div class="col-md-7">
+<div class="card">
+  <div class="card-header bg-warning text-dark py-3">
+    <h5 class="mb-0"><i class="bi bi-shield-exclamation me-2"></i>Fraud Check — Claim #@Model.ClaimId</h5>
+  </div>
+  <div class="card-body p-4">
+
+    @* Claim + Assessment Summary *@
+    @if (claim != null) {
+    <div class="card bg-light border mb-4">
+      <div class="card-body py-3">
+        <h6 class="fw-bold mb-2 text-primary"><i class="bi bi-info-circle me-1"></i>Claim Summary</h6>
+        <div class="row g-2 small">
+          <div class="col-sm-4"><span class="text-muted">Customer:</span><br/><strong>@claim.Customer?.Name</strong></div>
+          <div class="col-sm-4"><span class="text-muted">Policy:</span><br/><strong>@claim.Policy?.PolicyName</strong></div>
+          <div class="col-sm-4"><span class="text-muted">Claimed Amount:</span><br/><strong class="text-primary">₹@claim.ClaimAmount.ToString("N0")</strong></div>
+        </div>
+        @if (claim.Documents.Any()) {
+        <hr class="my-2"/>
+        <p class="mb-1 small fw-semibold text-muted">Documents:</p>
+        @foreach (var d in claim.Documents) {
+          <span class="badge bg-success me-1 mb-1">@d.DocumentName — @d.VerificationStatus</span>
+        }
+        }
+        @if (assessment != null) {
+        <hr class="my-2"/>
+        <div class="row g-2 small">
+          <div class="col-sm-4"><span class="text-muted">Surveyor:</span><br/><strong>@assessment.Surveyor?.Name</strong></div>
+          <div class="col-sm-4"><span class="text-muted">Assessed Amount:</span><br/><strong class="text-success">₹@assessment.AssessedAmount.ToString("N0")</strong></div>
+          <div class="col-sm-4"><span class="text-muted">Assessment Note:</span><br/><span>@(assessment.AssessmentRemarks ?? "—")</span></div>
+        </div>
+        }
+      </div>
+    </div>
+    }
+
+    <div class="alert alert-info small mb-4">
+      <strong><i class="bi bi-lightbulb me-1"></i>Scoring Guide:</strong><br/>
+      <span class="text-success fw-bold">0–30 = LOW</span> — claim can proceed to admin approval<br/>
+      <span class="text-warning fw-bold">31–60 = MEDIUM</span> — needs careful review<br/>
+      <span class="text-danger fw-bold">61–100 = HIGH</span> — suspected fraud, do not approve
+    </div>
+
+    <form asp-action="Check" asp-controller="Fraud" method="post">
+      @Html.AntiForgeryToken()
+      <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+      <input type="hidden" name="ClaimId" value="@Model.ClaimId" />
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Fraud Score (0–100) <span class="text-danger">*</span></label>
+        <input name="FraudScore" type="number" class="form-control form-control-lg"
+               min="0" max="100" placeholder="Enter score e.g. 25" value="@Model.FraudScore" required />
+        <div class="form-text">Based on claim amount, documents, and assessed value above</div>
+      </div>
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Risk Flag <span class="text-danger">*</span></label>
+        <select name="RiskFlag" class="form-select form-select-lg" required>
+          @if (Model.RiskFlag == InsuranceClaims.Enums.RiskFlag.LOW)
+          {
+            <option value="0" selected>LOW   — No significant risk (Score 0–30)</option>
+          }
+          else
+          {
+            <option value="0">LOW   — No significant risk (Score 0–30)</option>
+          }
+          @if (Model.RiskFlag == InsuranceClaims.Enums.RiskFlag.MEDIUM)
+          {
+            <option value="1" selected>MEDIUM — Requires manual review (Score 31–60)</option>
+          }
+          else
+          {
+            <option value="1">MEDIUM — Requires manual review (Score 31–60)</option>
+          }
+          @if (Model.RiskFlag == InsuranceClaims.Enums.RiskFlag.HIGH)
+          {
+            <option value="2" selected>HIGH  — Suspected fraud (Score 61–100)</option>
+          }
+          else
+          {
+            <option value="2">HIGH  — Suspected fraud (Score 61–100)</option>
+          }
+        </select>
+      </div>
+      <button type="submit" class="btn btn-warning w-100 py-2 fw-semibold text-dark">
+        <i class="bi bi-shield-check me-2"></i>Submit Fraud Check
+      </button>
+    </form>
+  </div>
+</div>
+</div></div>

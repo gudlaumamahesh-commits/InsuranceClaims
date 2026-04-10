@@ -1,0 +1,108 @@
+@model InsuranceClaims.Models.ViewModels.CreateClaimViewModel
+@{
+    ViewData["Title"] = "File a Claim";
+    var eligible = ViewBag.EligiblePolicies as List<InsuranceClaims.Models.Entities.PolicyPurchase> ?? new();
+}
+<div class="mb-3"><a href="/Claim/MyClaims" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+<div class="row justify-content-center"><div class="col-md-7">
+<div class="card">
+  <div class="card-header bg-primary text-white py-3"><h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>File a New Claim</h5></div>
+  <div class="card-body p-4">
+    @* <div class="alert alert-info small mb-4">
+      <i class="bi bi-info-circle me-1"></i>
+      <strong>Claim Flow:</strong> File Claim → Upload Documents → Officer Assigns Surveyor → Surveyor Verifies Docs &amp; Assesses → Officer Runs Fraud Check → Admin Approves → Settlement
+    </div> *@
+    <form asp-action="Create" method="post">
+      @Html.AntiForgeryToken()
+      <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+      <div class="mb-3">
+        <label asp-for="PolicyId" class="form-label fw-semibold">Select Policy <span class="text-danger">*</span></label>
+        <select asp-for="PolicyId" class="form-select" id="policySelect" required onchange="updateCoverageLimit(this)">
+          <option value="" data-coverage="0">-- Select an active policy --</option>
+          @foreach (var p in eligible) {
+            <option value="@p.PolicyId" data-coverage="@p.Policy?.CoverageAmount">
+              @p.Policy?.PolicyName — Coverage: ₹@p.Policy?.CoverageAmount.ToString("N0") (Valid till @p.EndDate.ToString("dd MMM yyyy"))
+            </option>
+          }
+        </select>
+        <span asp-validation-for="PolicyId" class="text-danger small"></span>
+        @if (!eligible.Any()) {
+          <div class="alert alert-warning small mt-2 mb-0 py-2">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            No eligible policies found. Either you have no active policies, or all your active policies already have a pending claim.
+            <a href="/" class="fw-semibold">Buy a new policy</a>
+          </div>
+        }
+      </div>
+      <div class="mb-3">
+        <label asp-for="ClaimType" class="form-label fw-semibold">Claim Type <span class="text-danger">*</span></label>
+        <select asp-for="ClaimType" class="form-select" required>
+          <option value="">-- Select claim type --</option>
+          <option>Accident</option><option>Medical Emergency</option><option>Natural Disaster</option>
+          <option>Theft</option><option>Fire Damage</option><option>Vehicle Damage</option><option>Other</option>
+        </select>
+        <span asp-validation-for="ClaimType" class="text-danger small"></span>
+      </div>
+      <div class="mb-4">
+        <label asp-for="ClaimAmount" class="form-label fw-semibold">Claim Amount (₹) <span class="text-danger">*</span></label>
+        @* <div class="input-group"><span class="input-group-text">₹</span>
+          <input asp-for="ClaimAmount" class="form-control" placeholder="Enter amount"/>
+        </div>
+        <span asp-validation-for="ClaimAmount" class="text-danger small"></span> *@
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input asp-for="ClaimAmount" class="form-control" placeholder="Enter amount"
+                                   id="claimAmount" oninput="validateCoverage(this)" />
+                        </div>
+                        <div id="coverageHint" class="form-text text-muted">Select a policy above to see the maximum claimable amount.</div>
+                        <div id="coverageError" class="text-danger small d-none">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            Amount exceeds policy coverage. Maximum allowed: <strong id="maxAllowed"></strong>
+                        </div>
+                        <span asp-validation-for="ClaimAmount" class="text-danger small"></span>
+      </div>
+      <div class="alert alert-warning py-2 small mb-4">
+        <i class="bi bi-exclamation-circle me-1"></i>After submitting, you <strong>must upload supporting documents</strong> to proceed.
+      </div>
+      <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" @(eligible.Any() ? "" : "disabled")>
+        <i class="bi bi-send me-2"></i>Submit Claim
+      </button>
+    </form>
+  </div>
+</div>
+</div></div>
+<script>
+    var currentCoverage = 0;
+ 
+    function updateCoverageLimit(sel) {
+        var opt = sel.options[sel.selectedIndex];
+        currentCoverage = parseFloat(opt.getAttribute('data-coverage')) || 0;
+        var hint = document.getElementById('coverageHint');
+        if (currentCoverage > 0) {
+            hint.innerHTML = '<i class="bi bi-info-circle me-1"></i>Maximum claimable for this policy: <strong>₹' + currentCoverage.toLocaleString('en-IN') + '</strong>';
+            hint.className = 'form-text text-info fw-semibold';
+        } else {
+            hint.innerHTML = 'Select a policy above to see the maximum claimable amount.';
+            hint.className = 'form-text text-muted';
+        }
+        validateCoverage(document.getElementById('claimAmount'));
+    }
+ 
+    function validateCoverage(input) {
+        var amount    = parseFloat(input.value) || 0;
+        var errDiv    = document.getElementById('coverageError');
+        var maxSpan   = document.getElementById('maxAllowed');
+        var submitBtn = document.querySelector('button[type="submit"]');
+        if (currentCoverage > 0 && amount > currentCoverage) {
+            maxSpan.textContent = '₹' + currentCoverage.toLocaleString('en-IN');
+            errDiv.classList.remove('d-none');
+            input.classList.add('is-invalid');
+            if (submitBtn) submitBtn.disabled = true;
+        } else {
+            errDiv.classList.add('d-none');
+            input.classList.remove('is-invalid');
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    }
+</script>
+ 

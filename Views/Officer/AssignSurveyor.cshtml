@@ -1,0 +1,49 @@
+@model InsuranceClaims.Models.ViewModels.AssignSurveyorViewModel
+@{
+    ViewData["Title"] = "Assign Surveyor";
+    var claim     = ViewBag.Claim     as InsuranceClaims.Models.Entities.Claim;
+    var surveyors = ViewBag.Surveyors as List<InsuranceClaims.Models.Entities.Surveyor> ?? new();
+}
+<div class="mb-3"><a href="/Officer/Dashboard" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back to Dashboard</a></div>
+<div class="row justify-content-center"><div class="col-md-6">
+<div class="card">
+  <div class="card-header bg-info text-white py-3"><h5 class="mb-0"><i class="bi bi-person-plus me-2"></i>Assign Surveyor to Claim #@Model.ClaimId</h5></div>
+  <div class="card-body p-4">
+    @if (claim != null) {
+    <div class="alert alert-light border mb-4">
+      <div class="row g-2 small">
+        <div class="col-6"><span class="text-muted">Customer:</span> <strong>@claim.Customer?.Name</strong></div>
+        <div class="col-6"><span class="text-muted">Policy:</span> <strong>@claim.Policy?.PolicyName</strong></div>
+        <div class="col-6"><span class="text-muted">Claim Type:</span> <strong>@claim.ClaimType</strong></div>
+        <div class="col-6"><span class="text-muted">Amount:</span> <strong class="text-primary">₹@claim.ClaimAmount.ToString("N0")</strong></div>
+      </div>
+    </div>
+    }
+    <form asp-action="AssignSurveyor" asp-controller="Officer" method="post">
+      @Html.AntiForgeryToken()
+      <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+      <input type="hidden" asp-for="ClaimId" />
+      <div class="mb-3">
+        <label asp-for="SurveyorId" class="form-label fw-semibold">Select Surveyor <span class="text-danger">*</span></label>
+        <select asp-for="SurveyorId" class="form-select form-select-lg" required>
+          <option value="">-- Select a surveyor --</option>
+          @foreach (var s in surveyors) {
+            <option value="@s.SurveyorId">@s.Name (@s.User?.Email)</option>
+          }
+        </select>
+        <span asp-validation-for="SurveyorId" class="text-danger small"></span>
+        @if (!surveyors.Any()) {
+          <small class="text-danger d-block mt-1">No surveyors available. Ask admin to add surveyors first.</small>
+        }
+      </div>
+      <div class="mb-4">
+        <label asp-for="Notes" class="form-label fw-semibold">Notes for Surveyor</label>
+        <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Instructions for the surveyor..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-info w-100 py-2 fw-semibold text-white">
+        <i class="bi bi-person-check me-2"></i>Assign Surveyor
+      </button>
+    </form>
+  </div>
+</div>
+</div></div>

@@ -1,0 +1,63 @@
+@{ ViewData["Title"] = "Upload Document"; int claimId = ViewBag.ClaimId; }
+<div class="mb-3">
+    <a href="/Claim/Details/@claimId" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Claim
+    </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header bg-warning text-dark py-3">
+        <h5 class="mb-0"><i class="bi bi-upload me-2"></i>Upload Document — Claim #@claimId</h5>
+      </div>
+      <div class="card-body p-4">
+        <div class="alert alert-info small mb-4">
+          <i class="bi bi-info-circle me-1"></i>
+          @* Upload documents to support your claim. Once submitted, the officer will verify them.
+          <br/>*@
+          <strong>Required documents:</strong> FIR / Medical Report / Hospital Bill / Evidence Photos.
+        </div>
+
+        <form method="post" enctype="multipart/form-data" action="/Document/Upload">
+          @Html.AntiForgeryToken()
+          <input type="hidden" name="claimId" value="@claimId" />
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Document Type <span class="text-danger">*</span></label>
+            <select name="documentName" class="form-select" required>
+              <option value="">-- Select document type --</option>
+              <option>Police FIR</option>
+              <option>Medical Report</option>
+              <option>Hospital Bill</option>
+              <option>Repair Estimate</option>
+              <option>Identity Proof (Aadhaar/PAN)</option>
+              <option>Policy Document</option>
+              <option>Photos / Evidence</option>
+              <option>Death Certificate</option>
+              <option>Vehicle RC Book</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Select File <span class="text-danger">*</span></label>
+            <input type="file" name="file" class="form-control" required
+                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+            <small class="text-muted">Accepted: PDF, JPG, PNG, DOC (max 10MB)</small>
+          </div>
+
+          <button type="submit" class="btn btn-warning w-100 py-2 fw-semibold text-dark">
+            <i class="bi bi-cloud-upload me-2"></i>Upload Document
+          </button>
+        </form>
+
+        <hr class="my-3"/>
+        <p class="small text-muted text-center mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          You can upload multiple documents. Return here to add more.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

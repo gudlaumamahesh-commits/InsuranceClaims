@@ -1,0 +1,69 @@
+@model InsuranceClaims.Models.Entities.PolicyPurchase
+@{ ViewData["Title"] = "Confirm Policy Renewal"; }
+
+<div class="mb-3">
+    <a href="/Policy/MyPolicies" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to My Policies
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0"><i class="bi bi-arrow-repeat me-2"></i>Confirm Policy Renewal</h5>
+            </div>
+            <div class="card-body p-4">
+
+                @* Policy summary card *@
+                <div class="rounded p-3 mb-4" style="background:#f0f4ff;border:1px solid #d0d8ff;">
+                    <h6 class="fw-bold text-primary mb-3">
+                        <i class="bi bi-file-earmark-medical me-2"></i>@Model.Policy?.PolicyName
+                    </h6>
+                    <div class="row g-2 small">
+                        <div class="col-6">
+                            <span class="text-muted">Coverage Amount</span>
+                            <p class="fw-bold text-success mb-0">₹@Model.Policy?.CoverageAmount.ToString("N0")</p>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted">Current End Date</span>
+                            <p class="fw-bold mb-0 text-danger">@Model.EndDate.ToString("dd MMM yyyy")</p>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted">New End Date (after renewal)</span>
+                            <p class="fw-bold mb-0 text-success">@Model.EndDate.AddYears(1).ToString("dd MMM yyyy")</p>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted">Renewal Period</span>
+                            <p class="fw-bold mb-0">+1 Year</p>
+                        </div>
+                    </div>
+                </div>
+
+                @* Confirmation message *@
+                <div class="alert alert-warning d-flex gap-2 align-items-start mb-4">
+                    <i class="bi bi-exclamation-triangle-fill fs-5 mt-1"></i>
+                    <div>
+                        <strong>Are you sure you want to renew this policy?</strong><br/>
+                        <small>Your policy will be extended by 1 year to <strong>@Model.EndDate.AddYears(1).ToString("dd MMM yyyy")</strong>.</small>
+                    </div>
+                </div>
+
+                @* Confirm button — POST to Renew *@
+                <form method="post" asp-action="Renew" asp-controller="Policy">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="purchaseId" value="@Model.PurchaseId" />
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success flex-fill py-2 fw-semibold">
+                            <i class="bi bi-check-circle me-2"></i>Yes, Renew My Policy
+                        </button>
+                        <a href="/Policy/MyPolicies" class="btn btn-outline-secondary flex-fill py-2">
+                            <i class="bi bi-x-circle me-2"></i>No, Cancel
+                        </a>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>

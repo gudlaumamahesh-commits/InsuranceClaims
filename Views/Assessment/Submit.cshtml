@@ -1,0 +1,111 @@
+@model InsuranceClaims.Models.ViewModels.AssessmentViewModel
+@{
+    ViewData["Title"] = "Submit Assessment";
+    var claim = ViewBag.Claim as InsuranceClaims.Models.Entities.Claim;
+    var policy = new Policy();
+}
+
+<div class="mb-3">
+    <a href="/Assessment/Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to My Claims
+    </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card">
+      <div class="card-header bg-primary text-white py-3">
+        <h5 class="mb-0"><i class="bi bi-clipboard-plus me-2"></i>Submit Assessment — Claim #@Model.ClaimId</h5>
+      </div>
+      <div class="card-body p-4">
+
+        @if (claim != null)
+        {
+          <div class="alert alert-light border mb-4">
+            <div class="row g-2 small">
+              <div class="col-sm-6"><span class="text-muted">Customer:</span> <strong>@claim.Customer?.Name</strong></div>
+              <div class="col-sm-6"><span class="text-muted">Policy:</span> <strong>@claim.Policy?.PolicyName</strong></div>
+              <div class="col-sm-6"><span class="text-muted">Claim Type:</span> <strong>@claim.ClaimType</strong></div>
+              <div class="col-sm-6"><span class="text-muted">Claimed Amount:</span> <strong class="text-primary">₹@claim.ClaimAmount.ToString("N0")</strong></div>
+            </div>
+            @if (claim.Documents.Any())
+            {
+              <hr class="my-2"/>
+              <p class="mb-1 small fw-semibold text-muted">Uploaded Documents:</p>
+              @foreach (var d in claim.Documents)
+              {
+                <span class="badge bg-@(d.VerificationStatus == InsuranceClaims.Enums.VerificationStatus.VERIFIED ? "success" : d.VerificationStatus == InsuranceClaims.Enums.VerificationStatus.REJECTED ? "danger" : "warning text-dark") me-1">
+                  @d.DocumentName (@d.VerificationStatus)
+                </span>
+              }
+            }
+          </div>
+        }
+
+        <form asp-action="Submit" asp-controller="Assessment" method="post">
+          @Html.AntiForgeryToken()
+          <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+          <input type="hidden" asp-for="ClaimId" />
+
+          <div class="mb-3">
+            <label asp-for="AssessedAmount" class="form-label fw-semibold">
+              Assessed Amount (₹) <span class="text-danger">*</span>
+            </label>
+            <div class="input-group input-group-lg">
+              <span class="input-group-text fw-bold">₹</span>
+              @* <input asp-for="AssessedAmount" class="form-control" placeholder="Enter your assessed amount" /> *@
+                            <input asp-for="AssessedAmount" class="form-control"
+                                   placeholder="Enter your assessed amount"
+                                   id="assessedInput"
+                                   data-max="@(ViewBag.Claim != null ? ((InsuranceClaims.Models.Entities.Claim)ViewBag.Claim).Policy?.CoverageAmount : 0)"
+                                   oninput="validateAssessed(this)" />
+ 
+            </div>
+            @* <div class="form-text">Enter the fair market value based on documents reviewed.</div> *@
+                        <div class="form-text text-info fw-semibold">
+                            <i class="bi bi-info-circle me-1"></i>
+                            You may assess up to the policy coverage:
+                            <strong>₹@(ViewBag.Claim != null ? ((InsuranceClaims.Models.Entities.Claim)ViewBag.Claim).Policy?.CoverageAmount.ToString("N0") : "—")</strong>
+                        </div>
+                        <div id="assessedError" class="text-danger small d-none">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            Assessed amount cannot exceed policy coverage of
+                            <strong>₹@(ViewBag.Claim != null ? ((InsuranceClaims.Models.Entities.Claim)ViewBag.Claim).Policy?.CoverageAmount.ToString("N0") : "—")</strong>
+                        </div>
+            <span asp-validation-for="AssessedAmount" class="text-danger small"></span>
+          </div>
+
+          <div class="mb-4">
+            <label asp-for="AssessmentRemarks" class="form-label fw-semibold">Assessment Remarks</label>
+            <textarea asp-for="AssessmentRemarks" class="form-control" rows="4"
+              placeholder="Describe your assessment findings, document review observations, damage evaluation..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+            <i class="bi bi-send me-2"></i>Submit Assessment
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    function validateAssessed(input) {
+        var max       = parseFloat(input.getAttribute('data-max')) || 0;
+        var val       = parseFloat(input.value) || 0;
+        var errDiv    = document.getElementById('assessedError');
+        var submitBtn = document.querySelector('button[type="submit"]');
+        if (max > 0 && val > max) {
+            errDiv.classList.remove('d-none');
+            input.classList.add('is-invalid');
+            if (submitBtn) submitBtn.disabled = true;
+        } else {
+            errDiv.classList.add('d-none');
+            input.classList.remove('is-invalid');
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    }
+</script>
+ 
