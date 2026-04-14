@@ -15,21 +15,45 @@ namespace InsuranceClaims.Data
 
             await db.Database.MigrateAsync();
 
-            if (!await db.Users.AnyAsync(u => u.Role == UserRole.Admin))
-            {
-                PasswordHelper.CreatePasswordHash("Admin@123", out var hash, out var salt);
-                var admin = new User
-                {
-                    Email        = "admin@insurance.com",
-                    PasswordHash = hash,
-                    PasswordSalt = salt,
-                    Role         = UserRole.Admin
-                };
-                await db.Users.AddAsync(admin);
-                await db.SaveChangesAsync();
-            }
+			//if (!await db.Users.AnyAsync(u => u.Role == UserRole.Admin))
+			//{
+			//    PasswordHelper.CreatePasswordHash("Admin@123", out var hash, out var salt);
+			//    var admin = new User
+			//    {
+			//        Email        = "Admin@insurance.com",
+			//        PasswordHash = hash,
+			//        PasswordSalt = salt,
+			//        Role         = UserRole.Admin
+			//    };
+			//    await db.Users.AddAsync(admin);
+			//    await db.SaveChangesAsync();
+			//}
+			var admin = await db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Admin);
 
-            if (!await db.Policies.AnyAsync())
+			PasswordHelper.CreatePasswordHash("Vara@123", out var hash, out var salt);
+
+			if (admin == null)
+			{
+				admin = new User
+				{
+					Email = "vara@insurance.com",
+					PasswordHash = hash,
+					PasswordSalt = salt,
+					Role = UserRole.Admin
+				};
+
+				await db.Users.AddAsync(admin);
+			}
+			else
+			{
+				admin.Email = "vara@insurance.com";
+				admin.PasswordHash = hash;
+				admin.PasswordSalt = salt;
+			}
+
+			await db.SaveChangesAsync();
+
+			if (!await db.Policies.AnyAsync())
             {
                 await db.Policies.AddRangeAsync(
                     new Policy { PolicyName = "Basic Health Cover",  CoverageAmount = 100000,  Description = "Basic health insurance covering hospitalization expenses." },
