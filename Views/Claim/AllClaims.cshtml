@@ -30,11 +30,9 @@
     <td>
       <div class="d-flex gap-1 flex-wrap">
         <a href="/Claim/Details/@c.ClaimId" class="btn btn-outline-primary btn-sm" title="View"><i class="bi bi-eye"></i></a>
-        @* Officer can assign surveyor to UNDER_REVIEW claims *@
         @if (role == "Officer" && c.ClaimStatus == InsuranceClaims.Enums.ClaimStatus.UNDER_REVIEW) {
           <a href="/Officer/AssignSurveyor/@c.ClaimId" class="btn btn-info btn-sm text-white" title="Assign Surveyor"><i class="bi bi-person-plus"></i></a>
         }
-        @* ADMIN approves/rejects claims that have been fraud-checked *@
         @if (role == "Admin" && c.ClaimStatus == InsuranceClaims.Enums.ClaimStatus.UNDER_REVIEW && c.FraudCheck != null) {
           <form method="post" action="/Settlement/Approve" class="d-inline">
             @Html.AntiForgeryToken()

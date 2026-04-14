@@ -30,7 +30,6 @@ else
         var  claimSt   = hasClaim ? claimsByPolicy[p.PolicyId] : (InsuranceClaims.Enums.ClaimStatus?)null;
         string newEnd  = p.EndDate.AddYears(1).ToString("dd MMM yyyy");
 
-        // Badge logic
         string badgeClass = isSettled ? "bg-purple text-white" :
                             active    ? "bg-success" : "bg-secondary";
         string badgeText  = isSettled ? "Settled" :
@@ -82,13 +81,11 @@ else
                 }
 
                 <div class="d-flex gap-2 flex-wrap">
-                    @* Renew — always available *@
                     <button type="button" class="btn btn-outline-primary btn-sm"
                             data-bs-toggle="modal" data-bs-target="#renewModal-@p.PurchaseId">
                         <i class="bi bi-arrow-repeat me-1"></i>Renew (+1 Year)
                     </button>
 
-                    @* File Claim — only if policy active AND not already settled *@
                     @if (active && !isSettled && !hasClaim)
                     {
                         <a href="/Claim/Create" class="btn btn-outline-success btn-sm">
@@ -106,7 +103,6 @@ else
         </div>
         </div>
 
-        @* Renewal Modal *@
         <div class="modal fade" id="renewModal-@p.PurchaseId" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">

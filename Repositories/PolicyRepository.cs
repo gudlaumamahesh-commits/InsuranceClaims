@@ -16,7 +16,6 @@ namespace InsuranceClaims.Repositories
         public async Task<Policy?> GetByIdAsync(int id)
             => await _db.Policies.FindAsync(id);
 
-        // Include Claims and their SettlementLogs so we can show Settled status
         public async Task<List<PolicyPurchase>> GetPurchasesByCustomerAsync(int customerId)
             => await _db.PolicyPurchases
                 .Include(p => p.Policy)
@@ -24,7 +23,6 @@ namespace InsuranceClaims.Repositories
                 .Where(p => p.CustomerId == customerId)
                 .ToListAsync();
 
-        // Get claims for a specific customer + policy to check settlement
         public async Task<List<Claim>> GetClaimsByCustomerAndPolicyAsync(int customerId, int policyId)
             => await _db.Claims
                 .Include(c => c.SettlementLog)

@@ -46,7 +46,6 @@
           By clicking Confirm, you agree to purchase this policy for 1 year.
         </div>
 
-        @* FIXED: added AntiForgeryToken so POST is accepted *@
         <form method="post" action="/Policy/ConfirmBuy">
           @Html.AntiForgeryToken()
           <input type="hidden" name="policyId" value="@Model.PolicyId"/>

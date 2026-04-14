@@ -30,8 +30,6 @@ namespace InsuranceClaims.Services.Implementations
 
         public async Task<Claim?> GetClaimDetailsAsync(int claimId) => await _claimRepo.GetByIdAsync(claimId);
 
-        /// Returns policy purchases that are ELIGIBLE to file a claim
-        /// (active purchase AND no existing active/pending claim for that policy)
         public async Task<List<PolicyPurchase>> GetEligiblePoliciesForClaimAsync(int userId)
         {
             var customer = await _customerRepo.GetByUserIdAsync(userId);
@@ -40,14 +38,12 @@ namespace InsuranceClaims.Services.Implementations
             var purchases = await _policyRepo.GetPurchasesByCustomerAsync(customer.CustomerId);
             var myClaims  = await _claimRepo.GetByCustomerAsync(customer.CustomerId);
 
-            // PolicyIds that already have a REGISTERED or UNDER_REVIEW claim (i.e. active/pending)
             var alreadyClaimedPolicyIds = myClaims
                 .Where(c => c.ClaimStatus == ClaimStatus.REGISTERED ||
                             c.ClaimStatus == ClaimStatus.UNDER_REVIEW)
                 .Select(c => c.PolicyId)
                 .ToHashSet();
 
-            // Return only active purchases that do NOT already have a pending claim
             return purchases
                 .Where(p => p.EndDate >= DateTime.Now && !alreadyClaimedPolicyIds.Contains(p.PolicyId))
                 .ToList();
@@ -66,7 +62,6 @@ namespace InsuranceClaims.Services.Implementations
 			if (policy != null && model.ClaimAmount > policy.CoverageAmount)
 				return (false, $"Claim amount ₹{model.ClaimAmount:N0} cannot exceed the policy coverage of ₹{policy.CoverageAmount:N0}. Please enter a valid amount.");
 
-			// Guard: no duplicate active claim for same policy
 			var myClaims = await _claimRepo.GetByCustomerAsync(customer.CustomerId);
             bool hasPending = myClaims.Any(c => c.PolicyId == model.PolicyId &&
                 (c.ClaimStatus == ClaimStatus.REGISTERED || c.ClaimStatus == ClaimStatus.UNDER_REVIEW));

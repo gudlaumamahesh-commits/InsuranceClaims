@@ -10,7 +10,6 @@ namespace InsuranceClaims.Repositories
         private readonly AppDbContext _db;
         public SettlementRepository(AppDbContext db) => _db = db;
 
-        /// Claims that are APPROVED and do not yet have a settlement log
         public async Task<List<Claim>> GetApprovedClaimsWithoutSettlementAsync()
         {
             try
@@ -30,8 +29,6 @@ namespace InsuranceClaims.Repositories
             }
         }
 
-        /// Claims that have completed fraud check and are ready for Admin to Approve/Reject/Settle
-        /// Includes: UNDER_REVIEW with FraudCheck done + APPROVED without settlement
         public async Task<List<Claim>> GetClaimsReadyForAdminActionAsync()
         {
             try
@@ -42,9 +39,7 @@ namespace InsuranceClaims.Repositories
                     .Include(c => c.Policy)
                     .Include(c => c.SettlementLog)
                     .Where(c =>
-                        // Fraud-checked claims waiting for Admin approval
                         (c.ClaimStatus == ClaimStatus.UNDER_REVIEW && _db.FraudChecks.Any(f => f.ClaimId == c.ClaimId)) ||
-                        // Already APPROVED but settlement not yet processed
                         (c.ClaimStatus == ClaimStatus.APPROVED && !_db.SettlementLogs.Any(s => s.ClaimId == c.ClaimId))
                     )
                     .OrderByDescending(c => c.CreatedAt)

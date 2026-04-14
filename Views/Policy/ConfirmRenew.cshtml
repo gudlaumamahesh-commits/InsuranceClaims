@@ -15,7 +15,6 @@
             </div>
             <div class="card-body p-4">
 
-                @* Policy summary card *@
                 <div class="rounded p-3 mb-4" style="background:#f0f4ff;border:1px solid #d0d8ff;">
                     <h6 class="fw-bold text-primary mb-3">
                         <i class="bi bi-file-earmark-medical me-2"></i>@Model.Policy?.PolicyName
@@ -40,7 +39,6 @@
                     </div>
                 </div>
 
-                @* Confirmation message *@
                 <div class="alert alert-warning d-flex gap-2 align-items-start mb-4">
                     <i class="bi bi-exclamation-triangle-fill fs-5 mt-1"></i>
                     <div>
@@ -49,7 +47,6 @@
                     </div>
                 </div>
 
-                @* Confirm button — POST to Renew *@
                 <form method="post" asp-action="Renew" asp-controller="Policy">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="purchaseId" value="@Model.PurchaseId" />

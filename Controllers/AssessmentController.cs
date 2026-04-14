@@ -20,7 +20,6 @@ namespace InsuranceClaims.Controllers
             _claimRepo         = claimRepo;
         }
 
-        // Surveyor sees ONLY claims assigned to them
         public async Task<IActionResult> Index()
         {
             if (!HttpContext.Session.IsLoggedIn()) return RedirectToAction("Login", "Account");

@@ -15,7 +15,6 @@ namespace InsuranceClaims.Repositories
                 .Where(d => d.ClaimId == claimId)
                 .ToListAsync();
 
-        //All pending docs regardless of assignment 
         public async Task<List<ClaimDocument>> GetPendingAsync()
             => await _db.ClaimDocuments
                 .Include(d => d.Claim).ThenInclude(c => c!.Customer)
@@ -23,7 +22,6 @@ namespace InsuranceClaims.Repositories
                 .Where(d => d.VerificationStatus == VerificationStatus.PENDING)
                 .ToListAsync();
 
-        // Pending docs ONLY for claims assigned to a specific surveyor
         public async Task<List<ClaimDocument>> GetPendingForSurveyorAsync(int surveyorId)
             => await _db.ClaimDocuments
                 .Include(d => d.Claim).ThenInclude(c => c!.Customer)

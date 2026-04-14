@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace InsuranceClaims.Models.Entities
 {
-    /// <summary>Officer assigns a Surveyor to a Claim for assessment.</summary>
+    //Officer assigns a Surveyor to a Claim for assessment.
     public class SurveyorAssignment
     {
         [Key]

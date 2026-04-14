@@ -6,14 +6,6 @@
   <span class="badge bg-info fs-6">@Model.Count Pending Assessment</span>
 </div>
 
-@* <div class="alert alert-info small mb-4">
-  <i class="bi bi-info-circle me-1"></i>
-  <strong>Your Steps:</strong>
-  1. Click <strong>Verify Docs</strong> to review &amp; verify/reject each document &nbsp;→&nbsp;
-  2. Click <strong>Submit Assessment</strong> to enter assessed amount &nbsp;→&nbsp;
-  3. Card disappears — Officer will then run Fraud Check 
-</div> *@
-
 @if (!Model.Any()) {
 <div class="card"><div class="card-body text-center py-5">
   <i class="bi bi-clipboard2-check display-4 text-success"></i>
@@ -25,7 +17,6 @@
 @foreach (var a in Model) {
   var c = a.Claim;
 
-  @* Count ONLY non-rejected docs *@
   int totalDocs    = c?.Documents.Count ?? 0;
   int rejectedCount = c?.Documents.Count(d => d.VerificationStatus == InsuranceClaims.Enums.VerificationStatus.REJECTED) ?? 0;
   int activeDocs   = totalDocs - rejectedCount;
@@ -50,7 +41,6 @@
       <p class="small text-muted mb-1"><strong>Type:</strong> @c?.ClaimType</p>
       <p class="text-primary fw-bold mb-2">Claimed: ₹@c?.ClaimAmount.ToString("N0")</p>
 
-      @* Show verified / active-docs count (excluding rejected) *@
       <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
         <span class="text-muted small">Documents:</span>
         <span class="badge @(allVerified ? "bg-success" : "bg-warning text-dark")">

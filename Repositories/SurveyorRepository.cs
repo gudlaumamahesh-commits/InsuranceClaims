@@ -8,12 +8,8 @@ namespace InsuranceClaims.Repositories
     {
         private readonly AppDbContext _db;
         public SurveyorRepository(AppDbContext db) => _db = db;
-
-        // All surveyors (active + inactive) for admin dashboard
         public async Task<List<Surveyor>> GetAllAsync()
             => await _db.Surveyors.Include(s => s.User).OrderBy(s => s.Name).ToListAsync();
-
-        // Only active surveyors — used in AssignSurveyor dropdown
         public async Task<List<Surveyor>> GetActiveAsync()
             => await _db.Surveyors.Include(s => s.User).Where(s => s.IsActive).ToListAsync();
 
@@ -23,7 +19,6 @@ namespace InsuranceClaims.Repositories
         public async Task<Surveyor?> GetByIdAsync(int id)
             => await _db.Surveyors.Include(s => s.User).FirstOrDefaultAsync(s => s.SurveyorId == id);
 
-        // Toggle active/inactive instead of delete
         public async Task<(bool IsNowActive, string Message)> ToggleActiveAsync(int surveyorId)
         {
             var surveyor = await _db.Surveyors.FindAsync(surveyorId);

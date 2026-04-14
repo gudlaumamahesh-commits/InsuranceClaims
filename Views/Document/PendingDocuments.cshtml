@@ -30,7 +30,6 @@
   }
 </div></div>
 } else {
-@* Group by Claim for clearer view *@
 @foreach (var claimGroup in Model.GroupBy(d => d.ClaimId)) {
   var firstDoc = claimGroup.First();
   <div class="card mb-3">

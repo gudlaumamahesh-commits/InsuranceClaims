@@ -53,8 +53,6 @@ namespace InsuranceClaims.Controllers
             TempData["Success"] = m;
             return RedirectToAction("Index");
         }
-
-        // Toggle Officer Active/Inactive 
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleOfficer(int officerId)
         {
@@ -76,8 +74,6 @@ namespace InsuranceClaims.Controllers
             TempData["Success"] = m;
             return RedirectToAction("Index");
         }
-
-        // Toggle Surveyor Active/Inactive 
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleSurveyor(int surveyorId)
         {

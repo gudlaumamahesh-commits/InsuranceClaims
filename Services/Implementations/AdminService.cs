@@ -25,7 +25,6 @@ namespace InsuranceClaims.Services.Implementations
 
         public async Task<(bool Success, string Message)> AddOfficerAsync(AddOfficerViewModel model)
         {
-            // Email must be lowercase and @insurance.com
             var email = model.Email.ToLowerInvariant().Trim();
             if (!email.EndsWith("@insurance.com"))
                 return (false, "Officer email must end with @insurance.com (e.g., john@insurance.com).");
@@ -42,7 +41,6 @@ namespace InsuranceClaims.Services.Implementations
 
         public async Task<(bool Success, string Message)> AddSurveyorAsync(AddSurveyorViewModel model)
         {
-            // Email must be lowercase and @insurance.com
             var email = model.Email.ToLowerInvariant().Trim();
             if (!email.EndsWith("@insurance.com"))
                 return (false, "Surveyor email must end with @insurance.com (e.g., kumar@insurance.com).");

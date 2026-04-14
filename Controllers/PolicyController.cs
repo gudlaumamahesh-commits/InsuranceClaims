@@ -63,14 +63,11 @@ namespace InsuranceClaims.Controllers
             {
                 var userId    = HttpContext.Session.GetUserId();
                 var purchases = await _policyService.GetMyPoliciesAsync(userId);
-
-                // Get all claims for this customer to check settlement status per policy
                 var customer = await _customerRepo.GetByUserIdAsync(userId);
                 var allClaims = customer != null
                     ? await _claimRepo.GetByCustomerAsync(customer.CustomerId)
                     : new List<InsuranceClaims.Models.Entities.Claim>();
 
-                // A policy is "Settled" if it has an APPROVED claim with settlement processed
                 var settledPolicies = new HashSet<int>();
                 var claimsByPolicy  = new Dictionary<int, InsuranceClaims.Enums.ClaimStatus>();
 

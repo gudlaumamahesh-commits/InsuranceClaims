@@ -1,8 +1,5 @@
 namespace InsuranceClaims.Helpers
 {
-    /// <summary>
-    /// Constant keys used to store/retrieve session values.
-    /// </summary>
     public static class SessionKeys
     {
         public const string UserId   = "UserId";
@@ -10,9 +7,6 @@ namespace InsuranceClaims.Helpers
         public const string UserEmail = "UserEmail";
     }
 
-    /// <summary>
-    /// Extension methods on ISession for clean session access.
-    /// </summary>
     public static class SessionExtensions
     {
         public static bool IsLoggedIn(this ISession session)

@@ -10,7 +10,6 @@
     var pendingSettlement = Model.Where(c => c.ClaimStatus == InsuranceClaims.Enums.ClaimStatus.APPROVED).ToList();
 }
 
-@* ── STEP 1: Fraud-checked claims waiting for Admin Approve/Reject ── *@
 <div class="card mb-4">
   <div class="card-header d-flex justify-content-between align-items-center"
        style="background:linear-gradient(135deg,#4361ee,#3a0ca3);">
@@ -84,7 +83,6 @@
   </div>
 </div>
 
-@* ── STEP 2: Approved claims ready for payment ── *@
 <div class="card mb-4">
   <div class="card-header d-flex justify-content-between align-items-center"
        style="background:linear-gradient(135deg,#10b981,#059669);">
@@ -139,7 +137,6 @@
   </div>
 </div>
 
-@* Reject Modals *@
 @foreach (var c in pendingApproval)
 {
   <div class="modal fade" id="rejectModal-@c.ClaimId" tabindex="-1">

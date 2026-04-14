@@ -4,9 +4,6 @@
   <h2 class="mb-0 fw-bold"><i class="bi bi-shield-exclamation text-warning me-2"></i>Fraud Check</h2>
   <span class="badge bg-secondary fs-6">@Model.Count Claims</span>
 </div>
-@* <div class="alert alert-info small mb-3">
-  <i class="bi bi-info-circle me-1"></i>Claims listed here <strong>do not yet have a fraud check</strong>. After submitting fraud check: <strong>LOW</strong> = ready to approve, <strong>MEDIUM/HIGH</strong> = manual review needed.
-</div> *@
 @if (!Model.Any()) {
 <div class="card"><div class="card-body text-center py-5">
   <i class="bi bi-shield-check display-4 text-success"></i>

@@ -55,7 +55,6 @@ namespace InsuranceClaims.Controllers
                     return RedirectToAction("Index");
                 }
 
-                //Use ASSESSED amount as pre-fill, show both amounts
                 decimal assessedAmount = claim.ClaimAmount; 
                 string  assessedBy    = "Not assessed";
 
@@ -67,14 +66,13 @@ namespace InsuranceClaims.Controllers
                 }
 
                 ViewBag.ClaimId        = id;
-                ViewBag.ClaimedAmount  = claim.ClaimAmount;      // original customer claim
-                ViewBag.AssessedAmount = assessedAmount;          // surveyor's assessed value
+                ViewBag.ClaimedAmount  = claim.ClaimAmount;     
+                ViewBag.AssessedAmount = assessedAmount;          
                 ViewBag.AssessedBy     = assessedBy;
                 ViewBag.CustomerName   = claim.Customer?.Name;
                 ViewBag.FraudRisk      = claim.FraudCheck?.RiskFlag.ToString() ?? "Not checked";
                 ViewBag.FraudScore     = claim.FraudCheck?.FraudScore.ToString() ?? "—";
 
-                // Pre-fill with ASSESSED amount (not claimed)
                 return View(new SettlementViewModel { ClaimId = id, SettlementAmount = assessedAmount });
             }
             catch (Exception ex)

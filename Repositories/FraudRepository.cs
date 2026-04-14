@@ -10,10 +10,6 @@ namespace InsuranceClaims.Repositories
         private readonly AppDbContext _db;
         public FraudRepository(AppDbContext db) => _db = db;
 
-        /// Claims eligible for fraud check:
-        /// - Has documents, all VERIFIED
-        /// - Has at least one assessment
-        /// - No fraud check done yet
         public async Task<List<Claim>> GetClaimsReadyForFraudCheckAsync()
             => await _db.Claims
                 .Include(c => c.Customer)

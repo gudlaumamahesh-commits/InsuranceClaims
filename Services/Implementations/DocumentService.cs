@@ -37,7 +37,7 @@ namespace InsuranceClaims.Services.Implementations
             if (claim == null)
                 return (false, $"Claim #{claimId} not found.");
 
-            // ── Save file to wwwroot/uploads/ ────────────────────────────────
+            
             var uploadsDir = Path.Combine(_env.WebRootPath, "uploads");
             if (!Directory.Exists(uploadsDir)) Directory.CreateDirectory(uploadsDir);
 
@@ -48,20 +48,18 @@ namespace InsuranceClaims.Services.Implementations
             await using (var stream = new FileStream(fullPath, FileMode.Create))
                 await file.CopyToAsync(stream);
 
-            // ── FIX: If a REJECTED doc of the same type exists, REPLACE it ──
-            // This prevents count from increasing on re-upload
+            
             var existingRejected = claim.Documents
                 .FirstOrDefault(d => d.DocumentName == documentName
                                && d.VerificationStatus == VerificationStatus.REJECTED);
 
             if (existingRejected != null)
             {
-                // Replace: update the existing record back to PENDING with new file
+
                 existingRejected.FilePath           = $"/uploads/{fileName}";
                 existingRejected.VerificationStatus = VerificationStatus.PENDING;
                 await _docRepo.UpdateAsync(existingRejected);
 
-                // Log tracking
                 await _claimRepo.AddTrackingAsync(new ClaimTracking
                 {
                     ClaimId   = claimId,
@@ -73,7 +71,6 @@ namespace InsuranceClaims.Services.Implementations
                 return (true, $"'{documentName}' re-uploaded successfully and is pending re-verification.");
             }
 
-            // ── Normal upload: add new record ────────────────────────────────
             var doc = new ClaimDocument
             {
                 ClaimId            = claimId,
@@ -83,7 +80,6 @@ namespace InsuranceClaims.Services.Implementations
             };
             await _docRepo.AddAsync(doc);
 
-            // Move claim REGISTERED → UNDER_REVIEW
             if (claim.ClaimStatus == ClaimStatus.REGISTERED)
             {
                 claim.ClaimStatus = ClaimStatus.UNDER_REVIEW;
@@ -109,7 +105,7 @@ namespace InsuranceClaims.Services.Implementations
             doc.VerificationStatus = status;
             await _docRepo.UpdateAsync(doc);
 
-            // Check if ALL non-rejected docs for this claim are now verified
+            
             var allDocs      = await _docRepo.GetByClaimAsync(doc.ClaimId);
             var activeDocs   = allDocs.Where(d => d.VerificationStatus != VerificationStatus.REJECTED).ToList();
             bool allVerified = activeDocs.Any() && activeDocs.All(d => d.VerificationStatus == VerificationStatus.VERIFIED);

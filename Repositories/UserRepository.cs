@@ -9,7 +9,6 @@ namespace InsuranceClaims.Repositories
         private readonly AppDbContext _db;
         public UserRepository(AppDbContext db) => _db = db;
 
-        // Include Officer and Surveyor so we can check IsActive on login
         public async Task<User?> GetByEmailAsync(string email)
             => await _db.Users
                 .Include(u => u.Officer)

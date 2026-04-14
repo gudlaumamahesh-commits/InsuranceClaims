@@ -15,7 +15,6 @@
       </div>
       <div class="card-body p-4">
 
-        @* Claim Summary *@
         <div class="card bg-light border mb-4">
           <div class="card-body py-3">
             <div class="row g-2 small">
@@ -27,7 +26,6 @@
                 <span class="text-muted">Fraud Risk</span>
                 <p class="fw-bold mb-0">@(ViewBag.FraudRisk ?? "—") (Score: @(ViewBag.FraudScore ?? "—"))</p>
               </div>
-              @* Show BOTH amounts clearly *@
               <div class="col-sm-6">
                 <span class="text-muted">Customer Claimed Amount</span>
                 <p class="fw-bold text-primary mb-0 fs-6">₹@((ViewBag.ClaimedAmount as decimal?)?.ToString("N0") ?? "—")</p>
@@ -38,17 +36,7 @@
                 <span class="text-muted" style="font-size:.72rem;">by @(ViewBag.AssessedBy ?? "—")</span>
               </div>
             </div>
-            @* @{
-              decimal claimed  = (ViewBag.ClaimedAmount  as decimal?) ?? 0;
-              decimal assessed = (ViewBag.AssessedAmount as decimal?) ?? 0;
-              if (claimed > 0 && assessed > 0 && assessed < claimed) {
-                <div class="alert alert-info py-1 small mt-2 mb-0">
-                  <i class="bi bi-info-circle me-1"></i>
-                  Assessed amount is <strong>₹@((claimed - assessed).ToString("N0")) less</strong> than what the customer claimed.
-                  Settlement will be based on the assessed amount.
-                </div>
-              }
-            } *@
+            
           </div>
         </div>
 
@@ -61,13 +49,9 @@
             <label asp-for="SettlementAmount" class="form-label fw-semibold">
               Settlement Amount (₹)
               <span class="text-danger">*</span>
-              @* Pre-filled with assessed amount
-              <span class="text-muted fw-normal small ms-2">(Pre-filled with surveyor's assessed amount)</span> *@
             </label>
             <div class="input-group input-group-lg">
               <span class="input-group-text fw-bold">₹</span>
-              @* <input asp-for="SettlementAmount" class="form-control"
-                     placeholder="Enter settlement amount"/> *@
                             <input asp-for="SettlementAmount" class="form-control bg-light fw-bold"
                                    readonly title="Amount is fixed to the surveyor's assessed amount" />
  

@@ -35,7 +35,7 @@ namespace InsuranceClaims.Services.Implementations
             var policy = await _policyRepo.GetByIdAsync(policyId);
             if (policy == null) return (false, "Policy not found.");
 
-            // PREVENT DUPLICATE: customer cannot buy the same policy if they already have an active one
+            
             var existing = await _policyRepo.GetPurchasesByCustomerAsync(customer.CustomerId);
             bool alreadyOwns = existing.Any(p => p.PolicyId == policyId && p.EndDate >= DateTime.Now);
             if (alreadyOwns)
