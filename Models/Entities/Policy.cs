@@ -15,8 +15,6 @@ namespace InsuranceClaims.Models.Entities
         public decimal CoverageAmount { get; set; }
 
         public string? Description { get; set; }
-
-        // Navigation
         public ICollection<PolicyPurchase> PolicyPurchases { get; set; } = new List<PolicyPurchase>();
     }
 }

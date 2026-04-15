@@ -107,33 +107,6 @@
     </div>
   </div></div>
 
-  <div class="col-md-5"><div class="card h-100">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <h6 class="mb-0 fw-bold"><i class="bi bi-file-earmark-medical me-2 text-warning"></i>Insurance Policies</h6>
-      <a href="/Admin/AddPolicy" class="btn btn-warning btn-sm text-dark"><i class="bi bi-plus me-1"></i>Add Policy</a>
-    </div>
-    <div class="card-body p-0">
-      @if (!policies.Any()) { <p class="text-muted text-center py-4 mb-0">No policies found.</p> }
-      else {
-      <table class="table table-hover mb-0">
-        <thead class="table-light"><tr><th>Policy Name</th><th>Coverage</th><th></th></tr></thead>
-        <tbody>
-        @foreach (var p in policies) {<tr>
-          <td class="fw-semibold">@p.PolicyName</td>
-          <td class="text-success fw-bold">₹@p.CoverageAmount.ToString("N0")</td>
-          <td><form method="post" action="/Admin/DeletePolicy">@Html.AntiForgeryToken()
-            <input type="hidden" name="policyId" value="@p.PolicyId"/>
-            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete &quot;@p.PolicyName&quot;?')">
-              <i class="bi bi-trash"></i>
-            </button>
-          </form></td>
-        </tr>}
-        </tbody>
-      </table>
-      }
-    </div>
-  </div></div>
-
   <div class="col-12"><div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h6 class="mb-0 fw-bold"><i class="bi bi-clipboard-data me-2 text-success"></i>
@@ -212,5 +185,95 @@
       }
     </div>
   </div></div>
-
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">
+                    <i class="bi bi-file-earmark-medical me-2 text-warning"></i>Insurance Policies
+                    <span class="badge bg-primary rounded-pill">@((ViewBag.Policies as IEnumerable<dynamic>)?.Count() ?? 0) Total </span>
+                </h6>
+                <a href="/Admin/AddPolicy" class="btn btn-warning btn-sm text-dark"><i class="bi bi-plus me-1"></i>Add Policy</a>
+            </div>
+            <div class="card-body p-0">
+                @if (!policies.Any())
+                {
+                    <p class="text-muted text-center py-4 mb-0">No policies found.</p>
+                }
+                else
+                {
+ 
+                    <div class="card-body p-0">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4" style="width:20%">Policy Name</th>
+                                    <th style="width:15%">Coverage</th>
+ 
+                                    <th style="width:45%">Description</th>
+ 
+                                    <th style="width:20%">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var policy in ViewBag.Policies)
+                                {
+                                    <tr>
+                                        <td class="ps-4 fw-semibold">
+                                            @policy.PolicyName
+                                        </td>
+                                        <td>
+                                            <span class="text-success fw-bold">
+                                                ₹@policy.CoverageAmount.ToString("N0")
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrWhiteSpace((string?)policy.Description))
+                                            {
+                                                <span class="text-muted" style="font-size:0.88rem;">
+                                                    @policy.Description
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted fst-italic"
+                                                      style="font-size:0.85rem;">
+                                                    No description provided.
+                                                </span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <form asp-action="DeletePolicy" method="post"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm(
+                                                'Delete @policy.PolicyName? This cannot be undone.')">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="policyId"
+                                                       value="@policy.PolicyId" />
+                                                <button type="submit"
+                                                        class="btn btn-danger btn-sm">
+                                                    🗑 Delete
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+ 
+                                @if (!((IEnumerable<dynamic>)ViewBag.Policies).Any())
+                                {
+                                    <tr>
+                                        <td colspan="4"
+                                            class="text-center text-muted py-4">
+                                            No policies found.
+                                            Click + Add Policy to create one.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+ 
+                }
+            </div>
+        </div>
+    </div>
 </div>
