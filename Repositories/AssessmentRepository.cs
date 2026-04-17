@@ -18,7 +18,6 @@ namespace InsuranceClaims.Repositories
                 .Where(sa => sa.SurveyorId == surveyorId)
                 .ToListAsync();
 
-        // addedComment
         public async Task AddAsync(Assessment assessment)
         {
             await _db.Assessments.AddAsync(assessment);
