@@ -72,6 +72,9 @@ namespace InsuranceClaims.Controllers
                 ViewBag.CustomerName   = claim.Customer?.Name;
                 ViewBag.FraudRisk      = claim.FraudCheck?.RiskFlag.ToString() ?? "Not checked";
                 ViewBag.FraudScore     = claim.FraudCheck?.FraudScore.ToString() ?? "—";
+                ViewBag.BankName       = claim.BankName ?? "Not provided";
+                ViewBag.BankAccountNumber = claim.BankAccountNumber ?? "Not provided";
+                ViewBag.IFSCCode       = claim.IFSCCode ?? "Not provided";
 
                 return View(new SettlementViewModel { ClaimId = id, SettlementAmount = assessedAmount });
             }
@@ -90,7 +93,13 @@ namespace InsuranceClaims.Controllers
             {
                 if (!ModelState.IsValid) { ViewBag.ClaimId = model.ClaimId; return View(model); }
                 var (success, message) = await _settlementService.ProcessSettlementAsync(model);
-                TempData[success ? "Success" : "Error"] = message;
+                if (success)
+                {
+                    TempData["SettlementAmount"] = model.SettlementAmount.ToString("N0");
+                    TempData["ClaimId"] = model.ClaimId.ToString();
+                    return RedirectToAction("Processing");
+                }
+                TempData["Error"] = message;
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
@@ -98,6 +107,20 @@ namespace InsuranceClaims.Controllers
                 TempData["Error"] = $"Error processing settlement: {ex.Message}";
                 return RedirectToAction("Index");
             }
+        }
+
+        public IActionResult Processing()
+        {
+            if (!IsAdmin()) return RedirectToAction("AccessDenied", "Home");
+            ViewBag.SettlementAmount = TempData["SettlementAmount"];
+            ViewBag.ClaimId = TempData["ClaimId"];
+            return View();
+        }
+
+        public IActionResult Success()
+        {
+            if (!IsAdmin()) return RedirectToAction("AccessDenied", "Home");
+            return View();
         }
 
         [HttpPost, ValidateAntiForgeryToken]

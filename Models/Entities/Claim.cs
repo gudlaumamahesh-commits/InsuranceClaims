@@ -27,6 +27,18 @@ namespace InsuranceClaims.Models.Entities
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        [Required]
+        [StringLength(20, MinimumLength = 9, ErrorMessage = "Account number must be between 9 and 20 digits.")]
+        public string BankAccountNumber { get; set; } = string.Empty;
+
+        [Required]
+        [RegularExpression(@"^[A-Z]{4}0[A-Z0-9]{6}$", ErrorMessage = "Invalid IFSC code format.")]
+        public string IFSCCode { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(100, ErrorMessage = "Bank name cannot exceed 100 characters.")]
+        public string BankName { get; set; } = string.Empty;
+
         // Navigation
         public Policy? Policy { get; set; }
         public Customer? Customer { get; set; }

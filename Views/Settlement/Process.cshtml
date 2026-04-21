@@ -8,7 +8,7 @@
 </div>
 
 <div class="row justify-content-center">
-  <div class="col-md-6">
+  <div class="col-md-7">
     <div class="card">
       <div class="card-header bg-success text-white py-3">
         <h5 class="mb-0"><i class="bi bi-cash-coin me-2"></i>Process Settlement — Claim #@Model.ClaimId</h5>
@@ -36,9 +36,47 @@
                 <span class="text-muted" style="font-size:.72rem;">by @(ViewBag.AssessedBy ?? "—")</span>
               </div>
             </div>
-            
           </div>
         </div>
+
+        @{
+            var bankName = ViewBag.BankName as string;
+            var accountNumber = ViewBag.BankAccountNumber as string;
+            var ifscCode = ViewBag.IFSCCode as string;
+            bool hasBankDetails = !string.IsNullOrEmpty(bankName) && bankName != "Not provided";
+        }
+
+        @if (hasBankDetails)
+        {
+            <div class="card border-primary mb-4">
+              <div class="card-header bg-primary text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-bank me-2"></i>Customer Bank Details</h6>
+              </div>
+              <div class="card-body py-3">
+                <div class="row g-3">
+                  <div class="col-md-12">
+                    <label class="text-muted small">Bank Name</label>
+                    <p class="fw-bold mb-0">@bankName</p>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="text-muted small">Account Number</label>
+                    <p class="fw-bold mb-0 font-monospace">@accountNumber</p>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="text-muted small">IFSC Code</label>
+                    <p class="fw-bold mb-0 font-monospace">@ifscCode</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning mb-4">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Note:</strong> Bank details were not provided for this claim. This is an older claim created before bank details were required.
+            </div>
+        }
 
         <form asp-action="Process" asp-controller="Settlement" method="post">
           @Html.AntiForgeryToken()
@@ -52,9 +90,8 @@
             </label>
             <div class="input-group input-group-lg">
               <span class="input-group-text fw-bold">₹</span>
-                            <input asp-for="SettlementAmount" class="form-control bg-light fw-bold"
-                                   readonly title="Amount is fixed to the surveyor's assessed amount" />
- 
+              <input asp-for="SettlementAmount" class="form-control bg-light fw-bold"
+                     readonly title="Amount is fixed to the surveyor's assessed amount" />
             </div>
             <div class="form-text">
               Surveyor assessed: <strong>₹@((ViewBag.AssessedAmount as decimal?)?.ToString("N0"))</strong> |

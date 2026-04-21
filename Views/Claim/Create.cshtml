@@ -2,22 +2,25 @@
 @{
     ViewData["Title"] = "File a Claim";
     var eligible = ViewBag.EligiblePolicies as List<InsuranceClaims.Models.Entities.PolicyPurchase> ?? new();
+    var remainingAmounts = ViewBag.RemainingAmounts as Dictionary<int, decimal> ?? new();
 }
 <div class="mb-3"><a href="/Claim/MyClaims" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
-<div class="row justify-content-center"><div class="col-md-7">
+<div class="row justify-content-center"><div class="col-md-8">
 <div class="card">
   <div class="card-header bg-primary text-white py-3"><h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>File a New Claim</h5></div>
   <div class="card-body p-4">
     <form asp-action="Create" method="post">
       @Html.AntiForgeryToken()
       <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+      
       <div class="mb-3">
         <label asp-for="PolicyId" class="form-label fw-semibold">Select Policy <span class="text-danger">*</span></label>
-        <select asp-for="PolicyId" class="form-select" id="policySelect" required onchange="updateCoverageLimit(this)">
-          <option value="" data-coverage="0">-- Select an active policy --</option>
+        <select asp-for="PolicyId" class="form-select" id="policySelect" required onchange="updatePolicyInfo(this)">
+          <option value="" data-coverage="0" data-remaining="0">-- Select an active policy --</option>
           @foreach (var p in eligible) {
-            <option value="@p.PolicyId" data-coverage="@p.Policy?.CoverageAmount">
-              @p.Policy?.PolicyName — Coverage: ₹@p.Policy?.CoverageAmount.ToString("N0") (Valid till @p.EndDate.ToString("dd MMM yyyy"))
+            var remaining = remainingAmounts.ContainsKey(p.PolicyId) ? remainingAmounts[p.PolicyId] : (p.Policy?.CoverageAmount ?? 0);
+            <option value="@p.PolicyId" data-coverage="@p.Policy?.CoverageAmount" data-remaining="@remaining">
+              @p.Policy?.PolicyName — Coverage: ₹@p.Policy?.CoverageAmount.ToString("N0") | Remaining: ₹@remaining.ToString("N0") (Valid till @p.EndDate.ToString("dd MMM yyyy"))
             </option>
           }
         </select>
@@ -30,6 +33,22 @@
           </div>
         }
       </div>
+
+      <div id="policyInfoCard" class="card bg-light border mb-3 d-none">
+        <div class="card-body py-2 small">
+          <div class="row">
+            <div class="col-6">
+              <span class="text-muted">Total Coverage:</span>
+              <strong id="totalCoverage" class="d-block text-primary">₹0</strong>
+            </div>
+            <div class="col-6">
+              <span class="text-muted">Remaining Claimable:</span>
+              <strong id="remainingAmount" class="d-block text-success">₹0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="mb-3">
         <label asp-for="ClaimType" class="form-label fw-semibold">Claim Type <span class="text-danger">*</span></label>
         <select asp-for="ClaimType" class="form-select" required>
@@ -39,25 +58,46 @@
         </select>
         <span asp-validation-for="ClaimType" class="text-danger small"></span>
       </div>
-      <div class="mb-4">
+
+      <div class="mb-3">
         <label asp-for="ClaimAmount" class="form-label fw-semibold">Claim Amount (₹) <span class="text-danger">*</span></label>
-        
-                        <div class="input-group">
-                            <span class="input-group-text">₹</span>
-                            <input asp-for="ClaimAmount" class="form-control" placeholder="Enter amount"
-                                   id="claimAmount" oninput="validateCoverage(this)" />
-                        </div>
-                        <div id="coverageHint" class="form-text text-muted">Select a policy above to see the maximum claimable amount.</div>
-                        <div id="coverageError" class="text-danger small d-none">
-                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                            Amount exceeds policy coverage. Maximum allowed: <strong id="maxAllowed"></strong>
-                        </div>
-                        <span asp-validation-for="ClaimAmount" class="text-danger small"></span>
+        <div class="input-group">
+          <span class="input-group-text">₹</span>
+          <input asp-for="ClaimAmount" class="form-control" placeholder="Enter amount" id="claimAmount" oninput="validateAmount(this)" />
+        </div>
+        <div id="amountError" class="text-danger small d-none">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>
+          Amount exceeds remaining claimable balance. Maximum allowed: <strong id="maxAllowed"></strong>
+        </div>
+        <span asp-validation-for="ClaimAmount" class="text-danger small"></span>
       </div>
+
+      <hr class="my-4" />
+      <h6 class="fw-bold mb-3"><i class="bi bi-bank me-2"></i>Bank Account Details</h6>
+
+      <div class="mb-3">
+        <label asp-for="BankName" class="form-label fw-semibold">Bank Name <span class="text-danger">*</span></label>
+        <input asp-for="BankName" class="form-control" placeholder="e.g., State Bank of India" />
+        <span asp-validation-for="BankName" class="text-danger small"></span>
+      </div>
+
+      <div class="mb-3">
+        <label asp-for="BankAccountNumber" class="form-label fw-semibold">Account Number <span class="text-danger">*</span></label>
+        <input asp-for="BankAccountNumber" class="form-control" placeholder="Enter 9-20 digit account number" maxlength="20" />
+        <span asp-validation-for="BankAccountNumber" class="text-danger small"></span>
+      </div>
+
+      <div class="mb-4">
+        <label asp-for="IFSCCode" class="form-label fw-semibold">IFSC Code <span class="text-danger">*</span></label>
+        <input asp-for="IFSCCode" class="form-control" placeholder="e.g., SBIN0001234" maxlength="11" style="text-transform:uppercase" />
+        <div class="form-text small">Format: 4 letters + 0 + 6 alphanumeric (e.g., SBIN0001234)</div>
+        <span asp-validation-for="IFSCCode" class="text-danger small"></span>
+      </div>
+
       <div class="alert alert-warning py-2 small mb-4">
         <i class="bi bi-exclamation-circle me-1"></i>After submitting, you <strong>must upload supporting documents</strong> to proceed.
       </div>
-      <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" @(eligible.Any() ? "" : "disabled")>
+      <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" id="submitBtn" @(eligible.Any() ? "" : "disabled")>
         <i class="bi bi-send me-2"></i>Submit Claim
       </button>
     </form>
@@ -65,37 +105,39 @@
 </div>
 </div></div>
 <script>
-    var currentCoverage = 0;
- 
-    function updateCoverageLimit(sel) {
+    var currentRemaining = 0;
+
+    function updatePolicyInfo(sel) {
         var opt = sel.options[sel.selectedIndex];
-        currentCoverage = parseFloat(opt.getAttribute('data-coverage')) || 0;
-        var hint = document.getElementById('coverageHint');
-        if (currentCoverage > 0) {
-            hint.innerHTML = '<i class="bi bi-info-circle me-1"></i>Maximum claimable for this policy: <strong>₹' + currentCoverage.toLocaleString('en-IN') + '</strong>';
-            hint.className = 'form-text text-info fw-semibold';
+        var coverage = parseFloat(opt.getAttribute('data-coverage')) || 0;
+        currentRemaining = parseFloat(opt.getAttribute('data-remaining')) || 0;
+        
+        var infoCard = document.getElementById('policyInfoCard');
+        if (coverage > 0) {
+            document.getElementById('totalCoverage').textContent = '₹' + coverage.toLocaleString('en-IN');
+            document.getElementById('remainingAmount').textContent = '₹' + currentRemaining.toLocaleString('en-IN');
+            infoCard.classList.remove('d-none');
         } else {
-            hint.innerHTML = 'Select a policy above to see the maximum claimable amount.';
-            hint.className = 'form-text text-muted';
+            infoCard.classList.add('d-none');
         }
-        validateCoverage(document.getElementById('claimAmount'));
+        validateAmount(document.getElementById('claimAmount'));
     }
- 
-    function validateCoverage(input) {
-        var amount    = parseFloat(input.value) || 0;
-        var errDiv    = document.getElementById('coverageError');
-        var maxSpan   = document.getElementById('maxAllowed');
-        var submitBtn = document.querySelector('button[type="submit"]');
-        if (currentCoverage > 0 && amount > currentCoverage) {
-            maxSpan.textContent = '₹' + currentCoverage.toLocaleString('en-IN');
+
+    function validateAmount(input) {
+        var amount = parseFloat(input.value) || 0;
+        var errDiv = document.getElementById('amountError');
+        var maxSpan = document.getElementById('maxAllowed');
+        var submitBtn = document.getElementById('submitBtn');
+        
+        if (currentRemaining > 0 && amount > currentRemaining) {
+            maxSpan.textContent = '₹' + currentRemaining.toLocaleString('en-IN');
             errDiv.classList.remove('d-none');
             input.classList.add('is-invalid');
             if (submitBtn) submitBtn.disabled = true;
         } else {
             errDiv.classList.add('d-none');
             input.classList.remove('is-invalid');
-            if (submitBtn) submitBtn.disabled = false;
+            if (submitBtn && @eligible.Any().ToString().ToLower()) submitBtn.disabled = false;
         }
     }
 </script>
- 

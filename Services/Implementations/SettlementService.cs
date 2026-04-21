@@ -10,11 +10,13 @@ namespace InsuranceClaims.Services.Implementations
     {
         private readonly SettlementRepository _settlementRepo;
         private readonly ClaimRepository      _claimRepo;
+        private readonly PolicyRepository     _policyRepo;
 
-        public SettlementService(SettlementRepository settlementRepo, ClaimRepository claimRepo)
+        public SettlementService(SettlementRepository settlementRepo, ClaimRepository claimRepo, PolicyRepository policyRepo)
         {
             _settlementRepo = settlementRepo;
             _claimRepo      = claimRepo;
+            _policyRepo     = policyRepo;
         }
 
         public async Task<List<Claim>> GetClaimsForSettlementAsync()
@@ -37,6 +39,34 @@ namespace InsuranceClaims.Services.Implementations
                 if (existing != null)
                     return (false, $"Settlement already processed for Claim #{model.ClaimId}.");
 
+                // Validate settlement amount doesn't exceed remaining coverage
+                var policy = claim.Policy;
+                if (policy != null)
+                {
+                    // Get all purchases for this customer and policy
+                    var purchases = await _policyRepo.GetPurchasesByCustomerAsync(claim.CustomerId);
+                    var purchase = purchases.FirstOrDefault(p => p.PolicyId == claim.PolicyId);
+                    
+                    if (purchase != null)
+                    {
+                        // Get the last renewal date
+                        var lastRenewalDate = purchase.Renewals?.OrderByDescending(r => r.RenewalDate).FirstOrDefault()?.RenewalDate;
+                        
+                        // Calculate total settled claims after last renewal
+                        var existingClaims = await _policyRepo.GetClaimsByCustomerAndPolicyAsync(claim.CustomerId, claim.PolicyId);
+                        decimal totalSettled = existingClaims
+                            .Where(c => c.SettlementLog != null && 
+                                        c.SettlementLog.SettlementStatus == SettlementStatus.PROCESSED &&
+                                        (!lastRenewalDate.HasValue || c.CreatedAt >= lastRenewalDate.Value))
+                            .Sum(c => c.SettlementLog!.SettlementAmount);
+                        
+                        decimal remainingAmount = policy.CoverageAmount - totalSettled;
+                        
+                        if (model.SettlementAmount > remainingAmount)
+                            return (false, $"Settlement amount ₹{model.SettlementAmount:N0} exceeds the remaining coverage of ₹{remainingAmount:N0}. Maximum allowed: ₹{remainingAmount:N0}.");
+                    }
+                }
+
                 var log = new SettlementLog
                 {
                     ClaimId          = model.ClaimId,
@@ -47,11 +77,17 @@ namespace InsuranceClaims.Services.Implementations
                 };
                 await _settlementRepo.AddAsync(log);
 
+                string bankDetails = "";
+                if (!string.IsNullOrEmpty(claim.BankName) && !string.IsNullOrEmpty(claim.BankAccountNumber))
+                {
+                    bankDetails = $" to {claim.BankName}, Account: {claim.BankAccountNumber}, IFSC: {claim.IFSCCode}";
+                }
+
                 await _claimRepo.AddTrackingAsync(new ClaimTracking
                 {
                     ClaimId   = model.ClaimId,
                     Status    = "SETTLEMENT_PROCESSED",
-                    Remarks   = $"Settlement of ₹{model.SettlementAmount:N0} processed by Admin. {model.Remarks}",
+                    Remarks   = $"Payment of ₹{model.SettlementAmount:N0} successfully transferred{bankDetails}. {model.Remarks}",
                     UpdatedAt = DateTime.Now
                 });
 
@@ -72,6 +108,42 @@ namespace InsuranceClaims.Services.Implementations
                 if (claim == null) return (false, $"Claim #{claimId} not found.");
                 if (claim.FraudCheck == null)
                     return (false, $"Claim #{claimId} has not been fraud-checked yet. Officer must run fraud check first.");
+
+                // Get the assessed amount from surveyor
+                decimal assessedAmount = claim.ClaimAmount;
+                if (claim.Assessments.Any())
+                {
+                    var latestAssessment = claim.Assessments.OrderByDescending(a => a.AssessedAt).First();
+                    assessedAmount = latestAssessment.AssessedAmount;
+                }
+
+                // Validate assessed amount doesn't exceed remaining coverage
+                var policy = claim.Policy;
+                if (policy != null)
+                {
+                    // Get all purchases for this customer and policy
+                    var purchases = await _policyRepo.GetPurchasesByCustomerAsync(claim.CustomerId);
+                    var purchase = purchases.FirstOrDefault(p => p.PolicyId == claim.PolicyId);
+                    
+                    if (purchase != null)
+                    {
+                        // Get the last renewal date
+                        var lastRenewalDate = purchase.Renewals?.OrderByDescending(r => r.RenewalDate).FirstOrDefault()?.RenewalDate;
+                        
+                        // Calculate total settled claims after last renewal
+                        var existingClaims = await _policyRepo.GetClaimsByCustomerAndPolicyAsync(claim.CustomerId, claim.PolicyId);
+                        decimal totalSettled = existingClaims
+                            .Where(c => c.SettlementLog != null && 
+                                        c.SettlementLog.SettlementStatus == SettlementStatus.PROCESSED &&
+                                        (!lastRenewalDate.HasValue || c.CreatedAt >= lastRenewalDate.Value))
+                            .Sum(c => c.SettlementLog!.SettlementAmount);
+                        
+                        decimal remainingAmount = policy.CoverageAmount - totalSettled;
+                        
+                        if (assessedAmount > remainingAmount)
+                            return (false, $"Cannot approve! Surveyor assessed amount ₹{assessedAmount:N0} exceeds the remaining coverage of ₹{remainingAmount:N0}. The surveyor has approved more than the available balance. Please contact the surveyor to reassess the claim or reject this claim.");
+                    }
+                }
 
                 await claimService.UpdateClaimStatusAsync(claimId, ClaimStatus.APPROVED,
                     $"Claim approved by Admin. Fraud score: {claim.FraudCheck.FraudScore}/100, Risk: {claim.FraudCheck.RiskFlag}.");
